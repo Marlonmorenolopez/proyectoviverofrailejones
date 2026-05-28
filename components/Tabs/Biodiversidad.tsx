@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+﻿import React, { useState } from 'react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -94,14 +94,14 @@ const Biodiversidad: React.FC<BiodiversidadProps> = ({ contract, setResultado, s
             description: "Description",
             estimatedPopulation: "Population Estimée",
             registerSpeciesButton: "Enregistrer l'Espèce Native",
-            registerClimaticEvent: "Enregistrer un Événement Climatique",
-            eventType: "Type d'Événement",
+            registerClimaticEvent: "Enregistrer un àvénement Climatique",
+            eventType: "Type d'àvénement",
             selectEventType: "Sélectionnez le type d'événement",
             temperature: "Température (°C)",
             precipitation: "Précipitations (mm)",
-            registerEventButton: "Enregistrer l'Événement Climatique",
+            registerEventButton: "Enregistrer l'àvénement Climatique",
             paramoStatistics: "Statistiques du Páramo",
-            updateStatisticsButton: "Mettre à Jour les Statistiques",
+            updateStatisticsButton: "Mettre à  Jour les Statistiques",
             detailedStatistics: "Statistiques Détaillées",
             getDetailedStatsButton: "Obtenir des Statistiques Détaillées",
             totalSeeds: "Total des Graines",
@@ -116,7 +116,7 @@ const Biodiversidad: React.FC<BiodiversidadProps> = ({ contract, setResultado, s
             errorGettingDetailedStats: "Erreur lors de l'obtention des statistiques détaillées :",
             errorVerifyingConditions: "Erreur lors de la vérification des conditions climatiques :",
             successRegisteringSpecies: "Espèce native enregistrée avec succès",
-            successRegisteringEvent: "Événement climatique enregistré avec succès",
+            successRegisteringEvent: "àvénement climatique enregistré avec succès",
             successGettingDetailedStats: "Statistiques détaillées obtenues avec succès",
             successVerifyingConditions: "Conditions climatiques vérifiées avec succès"
         },
@@ -140,17 +140,17 @@ const Biodiversidad: React.FC<BiodiversidadProps> = ({ contract, setResultado, s
             totalPlants: "Gesamtzahl Pflanzen",
             seedsPerMonth: "Samen pro Monat",
             plantsPerMonth: "Pflanzen pro Monat",
-            verifyClimaticConditions: "Klimabedingungen überprüfen",
+            verifyClimaticConditions: "Klimabedingungen à¼berprà¼fen",
             seedId: "Samen-ID",
-            verifyConditionsButton: "Bedingungen überprüfen",
+            verifyConditionsButton: "Bedingungen à¼berprà¼fen",
             errorRegisteringSpecies: "Fehler beim Registrieren der einheimischen Art:",
             errorRegisteringEvent: "Fehler beim Registrieren des Klimaereignisses:",
             errorGettingDetailedStats: "Fehler beim Abrufen detaillierter Statistiken:",
-            errorVerifyingConditions: "Fehler beim Überprüfen der Klimabedingungen:",
+            errorVerifyingConditions: "Fehler beim àberprà¼fen der Klimabedingungen:",
             successRegisteringSpecies: "Einheimische Art erfolgreich registriert",
             successRegisteringEvent: "Klimaereignis erfolgreich registriert",
             successGettingDetailedStats: "Detaillierte Statistiken erfolgreich abgerufen",
-            successVerifyingConditions: "Klimabedingungen erfolgreich überprüft"
+            successVerifyingConditions: "Klimabedingungen erfolgreich à¼berprà¼ft"
         }
     };
 

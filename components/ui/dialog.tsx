@@ -1,4 +1,4 @@
-import * as Dialog from '@radix-ui/react-dialog';
+﻿import * as Dialog from '@radix-ui/react-dialog';
 import React from 'react';
 
 const MiDialogo = () => (

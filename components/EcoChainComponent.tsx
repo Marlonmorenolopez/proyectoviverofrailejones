@@ -1,4 +1,4 @@
-'use client'
+﻿'use client'
 
 import React, { useState, useEffect, useCallback } from "react";
 import { ethers } from "ethers";
@@ -17,92 +17,114 @@ import Consulta from './Tabs/Consulta';
 import Actualizacion from './Tabs/Actualizacion';
 import Biodiversidad from './Tabs/Biodiversidad';
 import Administracion from './Tabs/Administracion';
-import contractABI from '@/abis/contractABI.json';
 import ResultadoDetallado from './ResultadoDetallado';
 import { LanguageProvider, useLanguage } from './contexts/LanguageContext';
 
+// ─── ABIs: uno por red ────────────────────────────────────────────────────
+// ✅ NUEVO: dos ABIs según la red (Ganache usa el original, Sepolia el del oráculo)
+import contractABI_ganache from '@/abis/contractABI_ganache.json';
+import contractABI_sepolia from '@/abis/contractABI_sepolia.json';
+import oracleABI           from '@/abis/oracleABI.json';
+
 import "../styles/globals.css";
 
-// Interfaces y tipos (mantener los existentes)
+// ─── Configuración de redes ────────────────────────────────────────────────
+// ✅ NUEVO: nftAddress y abi específico por red
+const REDES: Record<number, {
+  nombre:          string;
+  tieneOracle:     boolean;
+  contractAddress: string;
+  oracleAddress:   string;
+  nftAddress:      string;
+  abi:             any[];
+}> = {
+  31337: {
+    nombre:          "Hardhat Local",
+    tieneOracle:     false,
+    contractAddress: process.env.NEXT_PUBLIC_CONTRACT_ADDRESS_GANACHE || "",
+    oracleAddress:   "",
+    nftAddress:      process.env.NEXT_PUBLIC_NFT_ADDRESS_GANACHE || "",
+    abi:             contractABI_ganache,
+  },
+  11155111: {
+    nombre:          "Sepolia Testnet",
+    tieneOracle:     true,
+    contractAddress: process.env.NEXT_PUBLIC_CONTRACT_ADDRESS_SEPOLIA || "",
+    oracleAddress:   process.env.NEXT_PUBLIC_ORACLE_ADDRESS_SEPOLIA   || "",
+    nftAddress:      process.env.NEXT_PUBLIC_NFT_ADDRESS_SEPOLIA      || "",
+    abi:             contractABI_sepolia,
+  },
+};
+
+// ─── Tipos e interfaces ────────────────────────────────────────────────────
+
 type ObtenerSemilla = (id: number) => Promise<Semilla>;
 type RegistrarSemilla = {
   (tipo: string, ubicacionInicial: { latitud: number; longitud: number }, responsable: string, temperatura: number, humedadRelativa: number, precipitacion: number, horasLuzSolar: number, altitud: number, comentariosDeCuidado: string): Promise<ethers.ContractTransactionResponse>;
   estimateGas: (tipo: string, ubicacionInicial: { latitud: number; longitud: number }, responsable: string, temperatura: number, humedadRelativa: number, precipitacion: number, horasLuzSolar: number, altitud: number, comentariosDeCuidado: string) => Promise<bigint>;
 }
-
 type RegistroTrasladoPlanta = {
   (idSemilla: number, ubicacionEnParamo: { latitud: number; longitud: number }, responsableTraslado: string, comentariosDeCuidado: string): Promise<ethers.ContractTransactionResponse>;
   estimateGas: (idSemilla: number, ubicacionEnParamo: { latitud: number; longitud: number }, responsableTraslado: string, comentariosDeCuidado: string) => Promise<bigint>;
 }
-type ActualizarEstadoPlantaYCrecimiento = (idPlanta: number, nuevoEstado: string) => Promise<ethers.ContractTransactionResponse>;
-type ConsultarHistorialCrecimiento = (idPlanta: number) => Promise<HistorialCrecimiento[]>;
-type ActualizarUbicacionPlantaEnParamo = (idPlanta: number, nuevaUbicacion: { latitud: number; longitud: number }) => Promise<ethers.ContractTransactionResponse>;
-type TransferirPropiedad = (nuevaDireccion: string) => Promise<ethers.ContractTransactionResponse>;
-type TotalSemillasRegistradas = () => Promise<bigint>;
-type TotalPlantasRegistradas = () => Promise<bigint>;
-type TrasladoPlanta = (idPlanta: number) => Promise<Planta>;
+type ActualizarEstadoPlantaYCrecimiento  = (idPlanta: number, nuevoEstado: string) => Promise<ethers.ContractTransactionResponse>;
+type ConsultarHistorialCrecimiento       = (idPlanta: number) => Promise<HistorialCrecimiento[]>;
+type ActualizarUbicacionPlantaEnParamo   = (idPlanta: number, nuevaUbicacion: { latitud: number; longitud: number }) => Promise<ethers.ContractTransactionResponse>;
+type TransferirPropiedad                 = (nuevaDireccion: string) => Promise<ethers.ContractTransactionResponse>;
+type TotalSemillasRegistradas            = () => Promise<bigint>;
+type TotalPlantasRegistradas             = () => Promise<bigint>;
+type TrasladoPlanta                      = (idPlanta: number) => Promise<Planta>;
+type RegistrarEspecieNativa              = (nombre: string, descripcion: string, poblacionEstimada: number) => Promise<ethers.ContractTransactionResponse>;
+type ObtenerEstadisticasParamo           = () => Promise<[bigint, bigint, bigint, bigint]>;
+type RegistrarEventoClimatico            = (tipo: string, temperatura: number, precipitacion: number) => Promise<ethers.ContractTransactionResponse>;
+type EliminarSemilla                     = (idSemilla: number) => Promise<ethers.ContractTransactionResponse>;
+type EliminarPlanta                      = (idPlanta: number) => Promise<ethers.ContractTransactionResponse>;
+type ActualizarCondicionesClimaticas     = (idSemilla: number, nuevasCondiciones: CondicionesClimaticas) => Promise<ethers.ContractTransactionResponse>;
+type AgregarComentario                   = (idSemilla: number, comentario: string) => Promise<ethers.ContractTransactionResponse>;
+type ObtenerEstadisticas                 = () => Promise<[bigint, bigint, bigint]>;
+type ObtenerEventos                      = () => Promise<string[]>;
+type ObtenerHistorialDeCambios           = (idSemilla: number) => Promise<HistorialCrecimiento[]>;
+type Pausar                              = () => Promise<ethers.ContractTransactionResponse>;
+type Despausar                           = () => Promise<ethers.ContractTransactionResponse>;
+type AgregarAdministrador                = (nuevadireccion: string) => Promise<ethers.ContractTransactionResponse>;
+type RemoverAdministrador                = (direccion: string) => Promise<ethers.ContractTransactionResponse>;
+type ObtenerTodasLasSemillas             = () => Promise<Semilla[]>;
+type BuscarSemillasPorResponsable        = (responsable: string) => Promise<number[]>;
+type ObtenerEstadisticasDetalladas       = () => Promise<[bigint, bigint, bigint, bigint]>;
+type VerificarCondicionesClimaticas      = (idSemilla: number) => Promise<ethers.ContractTransactionResponse>;
 
-type RegistrarEspecieNativa = (
-  nombre: string,
-  descripcion: string,
-  poblacionEstimada: number
-) => Promise<ethers.ContractTransactionResponse>;
-
-type ObtenerEstadisticasParamo = () => Promise<[bigint, bigint, bigint, bigint]>;
-type RegistrarEventoClimatico = (
-  tipo: string,
-  temperatura: number,
-  precipitacion: number
-) => Promise<ethers.ContractTransactionResponse>;
-
-type EliminarSemilla = (idSemilla: number) => Promise<ethers.ContractTransactionResponse>;
-type EliminarPlanta = (idPlanta: number) => Promise<ethers.ContractTransactionResponse>;
-type ActualizarCondicionesClimaticas = (idSemilla: number, nuevasCondiciones: CondicionesClimaticas) => Promise<ethers.ContractTransactionResponse>;
-type AgregarComentario = (idSemilla: number, comentario: string) => Promise<ethers.ContractTransactionResponse>;
-type ObtenerEstadisticas = () => Promise<[bigint, bigint, bigint]>;
-type ObtenerEventos = () => Promise<string[]>;
-type ObtenerHistorialDeCambios = (idSemilla: number) => Promise<HistorialCrecimiento[]>;
-type Pausar = () => Promise<ethers.ContractTransactionResponse>;
-type Despausar = () => Promise<ethers.ContractTransactionResponse>;
-type AgregarAdministrador = (nuevadireccion: string) => Promise<ethers.ContractTransactionResponse>;
-type RemoverAdministrador = (direccion: string) => Promise<ethers.ContractTransactionResponse>;
-type ObtenerTodasLasSemillas = () => Promise<Semilla[]>;
-type BuscarSemillasPorResponsable = (responsable: string) => Promise<number[]>;
-type ObtenerEstadisticasDetalladas = () => Promise<[bigint, bigint, bigint, bigint]>;
-type VerificarCondicionesClimaticas = (idSemilla: number) => Promise<ethers.ContractTransactionResponse>;
-
-interface ViveroInterface extends ethers.BaseContract {
-  obtenerSemilla: ObtenerSemilla;
-  registrarSemilla: RegistrarSemilla;
-  registroTrasladoPlanta: RegistroTrasladoPlanta;
+export interface ViveroInterface extends ethers.BaseContract {
+  obtenerSemilla:                    ObtenerSemilla;
+  registrarSemilla:                  RegistrarSemilla;
+  registroTrasladoPlanta:            RegistroTrasladoPlanta;
   actualizarEstadoPlantaYCrecimiento: ActualizarEstadoPlantaYCrecimiento;
-  consultarHistorialCrecimiento: ConsultarHistorialCrecimiento;
+  consultarHistorialCrecimiento:     ConsultarHistorialCrecimiento;
   actualizarUbicacionPlantaEnParamo: ActualizarUbicacionPlantaEnParamo;
-  transferirPropiedad: TransferirPropiedad;
-  totalSemillasRegistradas: TotalSemillasRegistradas;
-  totalPlantasRegistradas: TotalPlantasRegistradas;
-  trasladoPlanta: TrasladoPlanta;
-  registrarEspecieNativa: RegistrarEspecieNativa;
-  obtenerEstadisticasParamo: ObtenerEstadisticasParamo;
-  registrarEventoClimatico: RegistrarEventoClimatico;
-  eliminarSemilla: EliminarSemilla;
-  eliminarPlanta: EliminarPlanta;
-  actualizarCondicionesClimaticas: ActualizarCondicionesClimaticas;
-  agregarComentario: AgregarComentario;
-  obtenerEstadisticas: ObtenerEstadisticas;
-  obtenerEventos: ObtenerEventos;
-  obtenerHistorialDeCambios: ObtenerHistorialDeCambios;
-  pausar: Pausar;
-  despausar: Despausar;
-  agregarAdministrador: AgregarAdministrador;
-  removerAdministrador: RemoverAdministrador;
-  obtenerTodasLasSemillas: ObtenerTodasLasSemillas;
-  buscarSemillasPorResponsable: BuscarSemillasPorResponsable;
-  obtenerEstadisticasDetalladas: ObtenerEstadisticasDetalladas;
-  verificarCondicionesClimaticas: VerificarCondicionesClimaticas;
+  transferirPropiedad:               TransferirPropiedad;
+  totalSemillasRegistradas:          TotalSemillasRegistradas;
+  totalPlantasRegistradas:           TotalPlantasRegistradas;
+  trasladoPlanta:                    TrasladoPlanta;
+  registrarEspecieNativa:            RegistrarEspecieNativa;
+  obtenerEstadisticasParamo:         ObtenerEstadisticasParamo;
+  registrarEventoClimatico:          RegistrarEventoClimatico;
+  eliminarSemilla:                   EliminarSemilla;
+  eliminarPlanta:                    EliminarPlanta;
+  actualizarCondicionesClimaticas:   ActualizarCondicionesClimaticas;
+  agregarComentario:                 AgregarComentario;
+  obtenerEstadisticas:               ObtenerEstadisticas;
+  obtenerEventos:                    ObtenerEventos;
+  obtenerHistorialDeCambios:         ObtenerHistorialDeCambios;
+  pausar:                            Pausar;
+  despausar:                         Despausar;
+  agregarAdministrador:              AgregarAdministrador;
+  removerAdministrador:              RemoverAdministrador;
+  obtenerTodasLasSemillas:           ObtenerTodasLasSemillas;
+  buscarSemillasPorResponsable:      BuscarSemillasPorResponsable;
+  obtenerEstadisticasDetalladas:     ObtenerEstadisticasDetalladas;
+  verificarCondicionesClimaticas:    VerificarCondicionesClimaticas;
 }
 
-type Semilla = {
+export type Semilla = {
   id: bigint;
   tipo: string;
   ubicacionInicial: { latitud: number; longitud: number };
@@ -118,13 +140,13 @@ type Semilla = {
   fechaRegistro: { timestamp: number };
 };
 
-type HistorialCrecimiento = {
+export type HistorialCrecimiento = {
   plantaId: bigint;
   estado: string;
   fechaActualizacion: { timestamp: number };
 };
 
-type Planta = {
+export type Planta = {
   id: bigint;
   idSemilla: bigint;
   estado: string;
@@ -134,7 +156,7 @@ type Planta = {
   fechaTraslado: { timestamp: number };
 };
 
-type CondicionesClimaticas = {
+export type CondicionesClimaticas = {
   temperatura: number;
   humedadRelativa: number;
   precipitacion: number;
@@ -143,38 +165,29 @@ type CondicionesClimaticas = {
   fechaRegistro: { timestamp: number };
 };
 
-const contractAddress = process.env.NEXT_PUBLIC_CONTRACT_ADDRESS || "";
+// ─── Helpers ──────────────────────────────────────────────────────────────
 
-function getViveroContract(address: string, signer: ethers.Signer): ViveroInterface {
-  return new ethers.Contract(address, contractABI, signer) as unknown as ViveroInterface;
+// ✅ ACTUALIZADO: recibe el ABI correcto en vez de importar uno fijo
+function getViveroContract(address: string, signer: ethers.Signer, abi: any[]): ViveroInterface {
+  return new ethers.Contract(address, abi, signer) as unknown as ViveroInterface;
 }
 
-async function estimateGas(contract: ViveroInterface, method: string, ...args: any[]): Promise<string> {
-  try {
-    const gasEstimate = await (contract as any).estimateGas[method](...args);
-    return (gasEstimate * BigInt(110) / BigInt(100)).toString();
-  } catch (error) {
-    console.error('Error estimating gas:', error);
-    return "0";
-  }
+function getOracleContract(address: string, signer: ethers.Signer): ethers.Contract {
+  return new ethers.Contract(address, oracleABI, signer);
 }
 
 function bigIntToString(obj: any): any {
-  if (typeof obj === 'bigint') {
-    return obj.toString();
-  } else if (Array.isArray(obj)) {
-    return obj.map(bigIntToString);
-  } else if (typeof obj === 'object' && obj !== null) {
-    return Object.fromEntries(
-      Object.entries(obj).map(([key, value]) => [key, bigIntToString(value)])
-    );
-  }
+  if (typeof obj === 'bigint') return obj.toString();
+  if (Array.isArray(obj)) return obj.map(bigIntToString);
+  if (typeof obj === 'object' && obj !== null)
+    return Object.fromEntries(Object.entries(obj).map(([k, v]) => [k, bigIntToString(v)]));
   return obj;
 }
 
+// ─── Selector de idioma ───────────────────────────────────────────────────
+
 const LanguageSelector: React.FC = () => {
   const { language, setLanguage } = useLanguage();
-
   return (
     <Select value={language} onValueChange={(value: 'es' | 'en' | 'fr' | 'de') => setLanguage(value)}>
       <SelectTrigger className="w-[180px]">
@@ -190,28 +203,36 @@ const LanguageSelector: React.FC = () => {
   );
 };
 
+// ─── Componente principal ─────────────────────────────────────────────────
+
 function EcoChainComponent() {
-  const [contract, setContract] = useState<ViveroInterface | null>(null);
-  const [walletConnected, setWalletConnected] = useState(false);
-  const [connectionStatus, setConnectionStatus] = useState<string>("");
-  const [networkName, setNetworkName] = useState<string>("");
-  const [accountAddress, setAccountAddress] = useState<string>("");
-  const [totalSemillas, setTotalSemillas] = useState(0);
-  const [totalPlantas, setTotalPlantas] = useState(0);
-  const [currentTimestamp, setCurrentTimestamp] = useState<string>('Cargando...');
+  const [contract,       setContract]       = useState<ViveroInterface | null>(null);
+  const [oracleContract, setOracleContract] = useState<ethers.Contract | null>(null);
+  // ✅ NUEVOS: signer y nftAddress disponibles globalmente para pasarlos a Registro
+  const [signer,         setSigner]         = useState<ethers.Signer | null>(null);
+  const [nftAddress,     setNftAddress]     = useState<string>("");
+
+  const [walletConnected,    setWalletConnected]    = useState(false);
+  const [connectionStatus,   setConnectionStatus]   = useState<string>("");
+  const [networkName,        setNetworkName]        = useState<string>("");
+  const [chainId,            setChainId]            = useState<number>(0);
+  const [tieneOracle,        setTieneOracle]        = useState(false);
+  const [accountAddress,     setAccountAddress]     = useState<string>("");
+  const [totalSemillas,      setTotalSemillas]      = useState(0);
+  const [totalPlantas,       setTotalPlantas]       = useState(0);
+  const [currentTimestamp,   setCurrentTimestamp]   = useState<string>('Cargando...');
   const [estadisticasParamo, setEstadisticasParamo] = useState<{
     totalSemillas: number;
     totalPlantas: number;
     totalEspeciesNativas: number;
     totalEventosClimaticos: number;
   } | null>(null);
-  const [resultado, setResultado] = useState('');
+  const [resultado,   setResultado]   = useState('');
   const [gasEstimate, setGasEstimate] = useState<string>('');
-  const [activeTab, setActiveTab] = useState("registro");
+  const [activeTab,   setActiveTab]   = useState("registro");
 
   const { language } = useLanguage();
 
-  // Traducciones
   const translations = {
     es: {
       title: "EcoChain: Vivero de Frailejones",
@@ -230,13 +251,16 @@ function EcoChainComponent() {
       biodiversidad: "Biodiversidad",
       administracion: "Administración",
       result: "Resultado",
+      oracleBadge: "🔗 Oráculo Chainlink Activo",
+      manualBadge: "✏️ Modo Manual (Ganache)",
       errors: {
         walletNotInstalled: "MetaMask no está instalado",
-        wrongNetwork: "Por favor, conecte MetaMask a la red Ganache",
+        wrongNetwork: "Red no soportada. Conecta a Hardhat Local (31337) o Sepolia (11155111)",
         connectionError: "Error de conexión: ",
         unknownError: "Error de conexión desconocido",
-        statsError: "Error al obtener las estadísticas del páramo: ",
-        updateTotalsError: "Error al actualizar los totales: "
+        statsError: "Error al obtener estadísticas: ",
+        updateTotalsError: "Error al actualizar totales: ",
+        noContractAddress: "No hay dirección de contrato configurada para esta red. Revisa tu .env"
       }
     },
     en: {
@@ -256,13 +280,16 @@ function EcoChainComponent() {
       biodiversidad: "Biodiversity",
       administracion: "Administration",
       result: "Result",
+      oracleBadge: "🔗 Chainlink Oracle Active",
+      manualBadge: "✏️ Manual Mode (Ganache)",
       errors: {
         walletNotInstalled: "MetaMask is not installed",
-        wrongNetwork: "Please connect MetaMask to the Ganache network",
+        wrongNetwork: "Unsupported network. Connect to Hardhat Local (31337) or Sepolia (11155111)",
         connectionError: "Connection error: ",
         unknownError: "Unknown connection error",
-        statsError: "Error fetching páramo statistics: ",
-        updateTotalsError: "Error updating totals: "
+        statsError: "Error fetching statistics: ",
+        updateTotalsError: "Error updating totals: ",
+        noContractAddress: "No contract address configured for this network. Check your .env"
       }
     },
     fr: {
@@ -282,13 +309,16 @@ function EcoChainComponent() {
       biodiversidad: "Biodiversité",
       administracion: "Administration",
       result: "Résultat",
+      oracleBadge: "🔗 Oracle Chainlink Actif",
+      manualBadge: "✏️ Mode Manuel (Ganache)",
       errors: {
         walletNotInstalled: "MetaMask n'est pas installé",
-        wrongNetwork: "Veuillez connecter MetaMask au réseau Ganache",
+        wrongNetwork: "Réseau non supporté. Connectez-vous à Hardhat Local (31337) ou Sepolia (11155111)",
         connectionError: "Erreur de connexion : ",
         unknownError: "Erreur de connexion inconnue",
-        statsError: "Erreur lors de la récupération des statistiques du páramo : ",
-        updateTotalsError: "Erreur lors de la mise à jour des totaux : "
+        statsError: "Erreur lors de la récupération des statistiques : ",
+        updateTotalsError: "Erreur lors de la mise à jour des totaux : ",
+        noContractAddress: "Pas d'adresse de contrat configurée pour ce réseau. Vérifiez votre .env"
       }
     },
     de: {
@@ -308,51 +338,64 @@ function EcoChainComponent() {
       biodiversidad: "Biodiversität",
       administracion: "Verwaltung",
       result: "Ergebnis",
+      oracleBadge: "🔗 Chainlink-Orakel Aktiv",
+      manualBadge: "✏️ Manueller Modus (Ganache)",
       errors: {
         walletNotInstalled: "MetaMask ist nicht installiert",
-        wrongNetwork: "Bitte verbinden Sie MetaMask mit dem Ganache-Netzwerk",
+        wrongNetwork: "Netzwerk nicht unterstützt. Verbinde mit Hardhat Local (31337) oder Sepolia (11155111)",
         connectionError: "Verbindungsfehler: ",
         unknownError: "Unbekannter Verbindungsfehler",
-        statsError: "Fehler beim Abrufen der Páramo-Statistiken: ",
-        updateTotalsError: "Fehler beim Aktualisieren der Gesamtzahlen: "
+        statsError: "Fehler beim Abrufen der Statistiken: ",
+        updateTotalsError: "Fehler beim Aktualisieren der Gesamtzahlen: ",
+        noContractAddress: "Keine Vertragsadresse für dieses Netzwerk konfiguriert. Prüfe deine .env"
       }
     },
   };
 
   const t = translations[language];
 
+  // ── Conectar wallet — acepta Ganache Y Sepolia ─────────────
+
   const connectWallet = async () => {
-    try {   
+    try {
       if (typeof window.ethereum === 'undefined') {
         throw new Error(t.errors.walletNotInstalled);
       }
 
       await window.ethereum.request({ method: 'eth_requestAccounts' });
-
       const provider = new ethers.BrowserProvider(window.ethereum);
+      const network  = await provider.getNetwork();
+      const id       = Number(network.chainId);
 
-      const network = await provider.getNetwork();
-      setNetworkName(network.name);
+      if (!REDES[id]) throw new Error(t.errors.wrongNetwork);
 
-      const signer = await provider.getSigner();
-      const address = await signer.getAddress();
+      const redConfig = REDES[id];
+
+      if (!redConfig.contractAddress) throw new Error(t.errors.noContractAddress);
+
+      const _signer = await provider.getSigner();
+      const address = await _signer.getAddress();
+
+      // ✅ NUEVO: guardar signer y nftAddress en estado
+      setSigner(_signer);
+      setNftAddress(redConfig.nftAddress);
       setAccountAddress(address);
+      setNetworkName(redConfig.nombre);
+      setChainId(id);
+      setTieneOracle(redConfig.tieneOracle);
 
-      if (network.chainId !== BigInt(1337)) {
-        throw new Error(t.errors.wrongNetwork);
+      // ✅ ACTUALIZADO: pasa el ABI correcto según la red
+      const contractInstance = getViveroContract(redConfig.contractAddress, _signer, redConfig.abi);
+      setContract(contractInstance);
+
+      if (redConfig.tieneOracle && redConfig.oracleAddress) {
+        setOracleContract(getOracleContract(redConfig.oracleAddress, _signer));
+      } else {
+        setOracleContract(null);
       }
 
-      const contractInstance = getViveroContract(contractAddress, signer);
-      
-      const totalSemillas = await contractInstance.totalSemillasRegistradas();
-      console.log(t.totalSeeds, totalSemillas.toString());
-
-      setContract(contractInstance);
       setWalletConnected(true);
-      
       setConnectionStatus(t.walletConnected);
-
-      setAccountAddress(contractAddress);
 
     } catch (error: unknown) {
       if (error instanceof Error) {
@@ -363,14 +406,26 @@ function EcoChainComponent() {
     }
   };
 
+  // Detectar cambio de red en MetaMask automáticamente
+  useEffect(() => {
+    if (typeof window.ethereum !== 'undefined') {
+      window.ethereum.on('chainChanged', () => {
+        setWalletConnected(false);
+        setContract(null);
+        setOracleContract(null);
+        setSigner(null);       // ✅ NUEVO
+        setNftAddress("");     // ✅ NUEVO
+        setConnectionStatus("");
+        setNetworkName("");
+        setChainId(0);
+      });
+    }
+  }, []);
+
   const updateTotals = async (contractInstance: ViveroInterface) => {
     try {
       const semillas: bigint = await contractInstance.totalSemillasRegistradas();
-      const plantas: bigint = await contractInstance.totalPlantasRegistradas();
-
-      console.log("Gesamtzahl Samen:", semillas);
-      console.log("Gesamtzahl Pflanzen:", plantas);
-
+      const plantas: bigint  = await contractInstance.totalPlantasRegistradas();
       setTotalSemillas(Number(semillas));
       setTotalPlantas(Number(plantas));
     } catch (error) {
@@ -383,9 +438,9 @@ function EcoChainComponent() {
     try {
       const stats = await contract.obtenerEstadisticasParamo();
       setEstadisticasParamo({
-        totalSemillas: Number(stats[0]),
-        totalPlantas: Number(stats[1]),
-        totalEspeciesNativas: Number(stats[2]),
+        totalSemillas:          Number(stats[0]),
+        totalPlantas:           Number(stats[1]),
+        totalEspeciesNativas:   Number(stats[2]),
         totalEventosClimaticos: Number(stats[3])
       });
     } catch (error) {
@@ -397,7 +452,7 @@ function EcoChainComponent() {
     if (!contract) return;
     try {
       const semillas = await contract.totalSemillasRegistradas();
-      const plantas = await contract.totalPlantasRegistradas();
+      const plantas  = await contract.totalPlantasRegistradas();
       setTotalSemillas(Number(semillas));
       setTotalPlantas(Number(plantas));
     } catch (error) {
@@ -405,14 +460,10 @@ function EcoChainComponent() {
     }
   };
 
-  const handleTabChange = (value: string) => {
-    setActiveTab(value);
-  };
+  const handleTabChange = (value: string) => setActiveTab(value);
 
   useEffect(() => {
-    const updateTimestamp = () => {
-      setCurrentTimestamp(new Date().toLocaleString());
-    };
+    const updateTimestamp = () => setCurrentTimestamp(new Date().toLocaleString());
     updateTimestamp();
     const timer = setInterval(updateTimestamp, 1000);
     return () => clearInterval(timer);
@@ -426,7 +477,6 @@ function EcoChainComponent() {
   }, [walletConnected, contract]);
 
   const particlesInit = useCallback(async (engine: Engine) => {
-    console.log("Initialisiere tsParticles");
     await loadFull(engine);
   }, []);
 
@@ -443,74 +493,28 @@ function EcoChainComponent() {
         init={particlesInit}
         loaded={particlesLoaded}
         options={{
-          background: {
-            color: {
-              value: "transparent",
-            },
-          },
+          background: { color: { value: "transparent" } },
           fpsLimit: 120,
           interactivity: {
             events: {
-              onClick: {
-                enable: true,
-                mode: "push",
-              },
-              onHover: {
-                enable: true,
-                mode: "repulse",
-              },
+              onClick: { enable: true, mode: "push" },
+              onHover: { enable: true, mode: "repulse" },
               resize: true,
             },
             modes: {
-              push: {
-                quantity: 4,
-              },
-              repulse: {
-                distance: 200,
-                duration: 0.4,
-              },
+              push: { quantity: 4 },
+              repulse: { distance: 200, duration: 0.4 },
             },
           },
           particles: {
-            color: {
-              value: "#ffffff",
-            },
-            links: {
-              color: "#ffffff",
-              distance: 150,
-              enable: true,
-              opacity: 0.5,
-              width: 1,
-            },
-            collisions: {
-              enable: true,
-            },
-            move: {
-              direction: "none",
-              enable: true,
-              outModes: {
-                default: "bounce",
-              },
-              random: false,
-              speed: 1,
-              straight: false,
-            },
-            number: {
-              density: {
-                enable: true,
-                area: 800,
-              },
-              value: 80,
-            },
-            opacity: {
-              value: 0.5,
-            },
-            shape: {
-              type: "circle",
-            },
-            size: {
-              value: { min: 1, max: 5 },
-            },
+            color: { value: "#ffffff" },
+            links: { color: "#ffffff", distance: 150, enable: true, opacity: 0.5, width: 1 },
+            collisions: { enable: true },
+            move: { direction: "none", enable: true, outModes: { default: "bounce" }, random: false, speed: 1, straight: false },
+            number: { density: { enable: true, area: 800 }, value: 80 },
+            opacity: { value: 0.5 },
+            shape: { type: "circle" },
+            size: { value: { min: 1, max: 5 } },
           },
           detectRetina: true,
         }}
@@ -547,6 +551,17 @@ function EcoChainComponent() {
             <LanguageSelector />
           </div>
 
+          {/* ── Badge de red activa ── */}
+          {walletConnected && (
+            <div className={`mb-4 text-center text-sm font-semibold py-1 px-3 rounded-full inline-block ${
+              tieneOracle
+                ? "bg-blue-100 text-blue-700 border border-blue-300"
+                : "bg-green-100 text-green-700 border border-green-300"
+            }`}>
+              {tieneOracle ? t.oracleBadge : t.manualBadge}
+            </div>
+          )}
+
           <div className="mb-6 text-center">
             <p className="text-black text-sm md:text-lg">{t.totalSeeds} {totalSemillas}</p>
             <p className="text-black text-sm md:text-lg">{t.totalPlants} {totalPlantas}</p>
@@ -573,10 +588,11 @@ function EcoChainComponent() {
               {walletConnected ? t.walletConnected : t.connectWallet}
             </Button>
             {connectionStatus && <p className="mt-2 text-center text-sm md:text-base">{connectionStatus}</p>}
-            {networkName && <p className="mt-2 text-center text-sm md:text-base">{t.networkConnected} {networkName}</p>}
+            {networkName    && <p className="mt-2 text-center text-sm md:text-base">{t.networkConnected} {networkName}</p>}
             {accountAddress && <p className="mt-2 text-center text-sm md:text-base">{t.contractAddress} {accountAddress}</p>}
           </div>
 
+          {/* Selector móvil */}
           <div className="md:hidden mb-4">
             <Select onValueChange={handleTabChange} value={activeTab}>
               <SelectTrigger className="w-full">
@@ -592,6 +608,7 @@ function EcoChainComponent() {
             </Select>
           </div>
 
+          {/* Tabs desktop */}
           <div className="hidden md:block">
             <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
               <TabsList className="grid w-full grid-cols-5 gap-1 mb-4">
@@ -604,13 +621,20 @@ function EcoChainComponent() {
             </Tabs>
           </div>
 
+          {/* Contenido de tabs */}
           <div className="mt-4">
             {activeTab === "registro" && (
-              <Registro 
-                contract={contract} 
-                setResultado={setResultado} 
-                setGasEstimate={setGasEstimate} 
-                walletConnected={walletConnected} 
+              // ✅ ACTUALIZADO: se pasan signer y nftAddress para el modal NFT
+              <Registro
+                contract={contract}
+                oracleContract={oracleContract}
+                chainId={chainId}
+                tieneOracle={tieneOracle}
+                signer={signer}
+                nftAddress={nftAddress}
+                setResultado={setResultado}
+                setGasEstimate={setGasEstimate}
+                walletConnected={walletConnected}
                 actualizarTotales={actualizarTotales}
                 language={language}
               />
@@ -642,21 +666,18 @@ function EcoChainComponent() {
             <h3 className="text-lg md:text-xl font-semibold mb-4 pb-2 border-b-2 border-green-300">
               {t.result}
             </h3>
-            <ResultadoDetallado resultado={resultado} gasEstimate={gasEstimate} language={language}/>
+            <ResultadoDetallado resultado={resultado} gasEstimate={gasEstimate} language={language} />
           </motion.div>
         </CardFooter>
       </Card>
     </div>
-  )
+  );
 }
 
-const WrappedEcoChainComponent = () => {
-  return (
-    <LanguageProvider>
-      <EcoChainComponent />
-    </LanguageProvider>
-  );
-};
+const WrappedEcoChainComponent = () => (
+  <LanguageProvider>
+    <EcoChainComponent />
+  </LanguageProvider>
+);
 
-export { WrappedEcoChainComponent as EcoChainComponent, type ViveroInterface };
-
+export { WrappedEcoChainComponent as EcoChainComponent };

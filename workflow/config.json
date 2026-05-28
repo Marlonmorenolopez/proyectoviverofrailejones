@@ -1,0 +1,7 @@
+{
+  "receptorAddress":   "0xTU_DIRECCION_CONTRATO_RECEPTOR",
+  "semillaId":         "1",
+  "chainSelectorName": "ethereum-testnet-sepolia",
+  "lat":               "4.721",
+  "lon":               "-73.785"
+}

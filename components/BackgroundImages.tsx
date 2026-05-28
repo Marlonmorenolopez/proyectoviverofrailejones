@@ -1,4 +1,4 @@
-export function BackgroundImages() {
+﻿export function BackgroundImages() {
   return (
     <div className="fixed inset-0 z-0 pointer-events-none">
       <img

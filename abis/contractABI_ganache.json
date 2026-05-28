@@ -1,0 +1,233 @@
+[
+  {
+    "inputs": [],
+    "stateMutability": "nonpayable",
+    "type": "constructor"
+  },
+  {
+    "inputs": [
+      { "internalType": "string",  "name": "_tipo",                "type": "string"  },
+      { "components": [{ "internalType": "int256", "name": "latitud", "type": "int256" }, { "internalType": "int256", "name": "longitud", "type": "int256" }], "internalType": "struct ViveroBogota.UbicacionGPS", "name": "_ubicacionInicial", "type": "tuple" },
+      { "internalType": "string",  "name": "_responsable",         "type": "string"  },
+      { "internalType": "int256",  "name": "_temperatura",         "type": "int256"  },
+      { "internalType": "uint256", "name": "_humedadRelativa",     "type": "uint256" },
+      { "internalType": "uint256", "name": "_precipitacion",       "type": "uint256" },
+      { "internalType": "uint256", "name": "_horasLuzSolar",       "type": "uint256" },
+      { "internalType": "uint256", "name": "_altitud",             "type": "uint256" },
+      { "internalType": "string",  "name": "_comentariosDeCuidado","type": "string"  }
+    ],
+    "name": "registrarSemilla",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      { "internalType": "uint256", "name": "_idSemilla",           "type": "uint256" },
+      { "components": [{ "internalType": "int256", "name": "latitud", "type": "int256" }, { "internalType": "int256", "name": "longitud", "type": "int256" }], "internalType": "struct ViveroBogota.UbicacionGPS", "name": "_ubicacionEnParamo", "type": "tuple" },
+      { "internalType": "string",  "name": "_responsableTraslado", "type": "string"  },
+      { "internalType": "string",  "name": "_comentariosDeCuidado","type": "string"  }
+    ],
+    "name": "registroTrasladoPlanta",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [
+      { "internalType": "uint256", "name": "_idPlanta",   "type": "uint256" },
+      { "internalType": "string",  "name": "_nuevoEstado","type": "string"  }
+    ],
+    "name": "actualizarEstadoPlantaYCrecimiento",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [{ "internalType": "uint256", "name": "_idSemilla", "type": "uint256" }],
+    "name": "obtenerSemilla",
+    "outputs": [
+      {
+        "components": [
+          { "internalType": "uint256", "name": "id",           "type": "uint256" },
+          { "internalType": "string",  "name": "tipo",         "type": "string"  },
+          { "components": [{ "internalType": "int256", "name": "latitud", "type": "int256" }, { "internalType": "int256", "name": "longitud", "type": "int256" }], "internalType": "struct ViveroBogota.UbicacionGPS", "name": "ubicacionInicial", "type": "tuple" },
+          { "internalType": "string",  "name": "responsable",  "type": "string"  },
+          { "components": [{ "internalType": "int256", "name": "temperatura", "type": "int256" }, { "internalType": "uint256", "name": "humedadRelativa", "type": "uint256" }, { "internalType": "uint256", "name": "precipitacion", "type": "uint256" }, { "internalType": "uint256", "name": "horasLuzSolar", "type": "uint256" }, { "internalType": "uint256", "name": "altitud", "type": "uint256" }, { "components": [{ "internalType": "uint256", "name": "timestamp", "type": "uint256" }], "internalType": "struct ViveroBogota.Timestamp", "name": "fechaRegistro", "type": "tuple" }], "internalType": "struct ViveroBogota.CondicionesClimaticas", "name": "condicionesClimaticas", "type": "tuple" },
+          { "internalType": "string",  "name": "comentariosDeCuidado", "type": "string" },
+          { "components": [{ "internalType": "uint256", "name": "timestamp", "type": "uint256" }], "internalType": "struct ViveroBogota.Timestamp", "name": "fechaRegistro", "type": "tuple" }
+        ],
+        "internalType": "struct ViveroBogota.Semilla",
+        "name": "",
+        "type": "tuple"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [{ "internalType": "uint256", "name": "_idPlanta", "type": "uint256" }],
+    "name": "trasladoPlanta",
+    "outputs": [
+      {
+        "components": [
+          { "internalType": "uint256", "name": "id",                  "type": "uint256" },
+          { "internalType": "uint256", "name": "idSemilla",           "type": "uint256" },
+          { "internalType": "string",  "name": "estado",              "type": "string"  },
+          { "components": [{ "internalType": "int256", "name": "latitud", "type": "int256" }, { "internalType": "int256", "name": "longitud", "type": "int256" }], "internalType": "struct ViveroBogota.UbicacionGPS", "name": "ubicacionEnParamo", "type": "tuple" },
+          { "internalType": "string",  "name": "responsableTraslado", "type": "string"  },
+          { "internalType": "string",  "name": "comentariosDeCuidado","type": "string"  },
+          { "components": [{ "internalType": "uint256", "name": "timestamp", "type": "uint256" }], "internalType": "struct ViveroBogota.Timestamp", "name": "fechaTraslado", "type": "tuple" }
+        ],
+        "internalType": "struct ViveroBogota.Planta",
+        "name": "",
+        "type": "tuple"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [{ "internalType": "uint256", "name": "_idPlanta", "type": "uint256" }],
+    "name": "consultarHistorialCrecimiento",
+    "outputs": [
+      {
+        "components": [
+          { "internalType": "uint256", "name": "plantaId", "type": "uint256" },
+          { "internalType": "string",  "name": "estado",   "type": "string"  },
+          { "components": [{ "internalType": "uint256", "name": "timestamp", "type": "uint256" }], "internalType": "struct ViveroBogota.Timestamp", "name": "fechaActualizacion", "type": "tuple" }
+        ],
+        "internalType": "struct ViveroBogota.HistorialCrecimiento[]",
+        "name": "",
+        "type": "tuple[]"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "obtenerTodasLasSemillas",
+    "outputs": [
+      {
+        "components": [
+          { "internalType": "uint256", "name": "id",          "type": "uint256" },
+          { "internalType": "string",  "name": "tipo",        "type": "string"  },
+          { "components": [{ "internalType": "int256", "name": "latitud", "type": "int256" }, { "internalType": "int256", "name": "longitud", "type": "int256" }], "internalType": "struct ViveroBogota.UbicacionGPS", "name": "ubicacionInicial", "type": "tuple" },
+          { "internalType": "string",  "name": "responsable", "type": "string"  },
+          { "components": [{ "internalType": "int256", "name": "temperatura", "type": "int256" }, { "internalType": "uint256", "name": "humedadRelativa", "type": "uint256" }, { "internalType": "uint256", "name": "precipitacion", "type": "uint256" }, { "internalType": "uint256", "name": "horasLuzSolar", "type": "uint256" }, { "internalType": "uint256", "name": "altitud", "type": "uint256" }, { "components": [{ "internalType": "uint256", "name": "timestamp", "type": "uint256" }], "internalType": "struct ViveroBogota.Timestamp", "name": "fechaRegistro", "type": "tuple" }], "internalType": "struct ViveroBogota.CondicionesClimaticas", "name": "condicionesClimaticas", "type": "tuple" },
+          { "internalType": "string",  "name": "comentariosDeCuidado", "type": "string" },
+          { "components": [{ "internalType": "uint256", "name": "timestamp", "type": "uint256" }], "internalType": "struct ViveroBogota.Timestamp", "name": "fechaRegistro", "type": "tuple" }
+        ],
+        "internalType": "struct ViveroBogota.Semilla[]",
+        "name": "",
+        "type": "tuple[]"
+      }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "obtenerEstadisticasParamo",
+    "outputs": [
+      { "internalType": "uint256", "name": "_totalSemillas",         "type": "uint256" },
+      { "internalType": "uint256", "name": "_totalPlantas",          "type": "uint256" },
+      { "internalType": "uint256", "name": "_totalEspeciesNativas",  "type": "uint256" },
+      { "internalType": "uint256", "name": "_totalEventosClimaticos","type": "uint256" }
+    ],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "totalSemillasRegistradas",
+    "outputs": [{ "internalType": "uint256", "name": "", "type": "uint256" }],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "totalPlantasRegistradas",
+    "outputs": [{ "internalType": "uint256", "name": "", "type": "uint256" }],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [{ "internalType": "uint256", "name": "_idSemilla", "type": "uint256" }],
+    "name": "eliminarSemilla",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [{ "internalType": "uint256", "name": "_idPlanta", "type": "uint256" }],
+    "name": "eliminarPlanta",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [{ "internalType": "string", "name": "_nombre", "type": "string" }, { "internalType": "string", "name": "_descripcion", "type": "string" }, { "internalType": "uint256", "name": "_poblacionEstimada", "type": "uint256" }],
+    "name": "registrarEspecieNativa",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [{ "internalType": "string", "name": "_tipo", "type": "string" }, { "internalType": "int256", "name": "_temperatura", "type": "int256" }, { "internalType": "uint256", "name": "_precipitacion", "type": "uint256" }],
+    "name": "registrarEventoClimatico",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [{ "internalType": "address", "name": "_nuevoAdmin", "type": "address" }],
+    "name": "agregarAdministrador",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [{ "internalType": "address", "name": "_admin", "type": "address" }],
+    "name": "removerAdministrador",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "pausar",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "despausar",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [{ "internalType": "address", "name": "nuevoDueno", "type": "address" }],
+    "name": "transferirPropiedad",
+    "outputs": [],
+    "stateMutability": "nonpayable",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "owner",
+    "outputs": [{ "internalType": "address", "name": "", "type": "address" }],
+    "stateMutability": "view",
+    "type": "function"
+  },
+  {
+    "inputs": [],
+    "name": "paused",
+    "outputs": [{ "internalType": "bool", "name": "", "type": "bool" }],
+    "stateMutability": "view",
+    "type": "function"
+  }
+]

@@ -1,4 +1,4 @@
-import React from 'react';
+﻿import React from 'react';
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -74,31 +74,31 @@ const Actualizacion: React.FC<ActualizacionProps> = ({ contract, setResultado, s
             commentAddError: "Error adding comment: "
         },
         fr: {
-            updatePlantState: "Mettre à jour l'état de la plante",
+            updatePlantState: "Mettre à  jour l'état de la plante",
             plantId: "ID de la plante",
             newState: "Nouvel état",
-            updateState: "Mettre à jour l'état",
-            updatePlantLocation: "Mettre à jour l'emplacement de la plante",
+            updateState: "Mettre à  jour l'état",
+            updatePlantLocation: "Mettre à  jour l'emplacement de la plante",
             newLatitude: "Nouvelle latitude",
             newLongitude: "Nouvelle longitude",
-            updateLocation: "Mettre à jour l'emplacement",
-            updateWeatherConditions: "Mettre à jour les conditions météorologiques",
+            updateLocation: "Mettre à  jour l'emplacement",
+            updateWeatherConditions: "Mettre à  jour les conditions météorologiques",
             seedId: "ID de la graine",
             temperature: "Température (°C)",
             relativeHumidity: "Humidité relative (%)",
             precipitation: "Précipitations (mm)",
             sunlightHours: "Heures d'ensoleillement",
             altitude: "Altitude (m)",
-            updateWeather: "Mettre à jour les conditions météorologiques",
+            updateWeather: "Mettre à  jour les conditions météorologiques",
             addComment: "Ajouter un commentaire",
             comment: "Commentaire",
             send: "Envoyer",
-            stateUpdated: "État de la plante mis à jour avec succès",
-            stateUpdateError: "Erreur lors de la mise à jour de l'état de la plante : ",
-            locationUpdated: "Emplacement de la plante mis à jour avec succès",
-            locationUpdateError: "Erreur lors de la mise à jour de l'emplacement de la plante : ",
-            weatherUpdated: "Conditions météorologiques mises à jour avec succès",
-            weatherUpdateError: "Erreur lors de la mise à jour des conditions météorologiques : ",
+            stateUpdated: "àtat de la plante mis à  jour avec succès",
+            stateUpdateError: "Erreur lors de la mise à  jour de l'état de la plante : ",
+            locationUpdated: "Emplacement de la plante mis à  jour avec succès",
+            locationUpdateError: "Erreur lors de la mise à  jour de l'emplacement de la plante : ",
+            weatherUpdated: "Conditions météorologiques mises à  jour avec succès",
+            weatherUpdateError: "Erreur lors de la mise à  jour des conditions météorologiques : ",
             commentAdded: "Commentaire ajouté avec succès",
             commentAddError: "Erreur lors de l'ajout du commentaire : "
         },
@@ -117,9 +117,9 @@ const Actualizacion: React.FC<ActualizacionProps> = ({ contract, setResultado, s
             relativeHumidity: "Relative Luftfeuchtigkeit (%)",
             precipitation: "Niederschlag (mm)",
             sunlightHours: "Sonnenstunden",
-            altitude: "Höhe (m)",
+            altitude: "Hà¶he (m)",
             updateWeather: "Wetterbedingungen aktualisieren",
-            addComment: "Kommentar hinzufügen",
+            addComment: "Kommentar hinzufà¼gen",
             comment: "Kommentar",
             send: "Senden",
             stateUpdated: "Pflanzenzustand erfolgreich aktualisiert",
@@ -128,8 +128,8 @@ const Actualizacion: React.FC<ActualizacionProps> = ({ contract, setResultado, s
             locationUpdateError: "Fehler beim Aktualisieren des Pflanzenstandorts: ",
             weatherUpdated: "Wetterbedingungen erfolgreich aktualisiert",
             weatherUpdateError: "Fehler beim Aktualisieren der Wetterbedingungen: ",
-            commentAdded: "Kommentar erfolgreich hinzugefügt",
-            commentAddError: "Fehler beim Hinzufügen des Kommentars: "
+            commentAdded: "Kommentar erfolgreich hinzugefà¼gt",
+            commentAddError: "Fehler beim Hinzufà¼gen des Kommentars: "
         }
     };
 

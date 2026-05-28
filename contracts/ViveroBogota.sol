@@ -1,6 +1,11 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.27;
 
+// ============================================================
+//  ViveroBogota.sol
+//  Contrato principal del Vivero Frailejones
+// ============================================================
+
 contract ViveroBogota {
     address public owner;
     uint256 public totalSemillasRegistradas;
@@ -41,7 +46,7 @@ contract ViveroBogota {
     }
 
     struct HistorialCrecimiento {
-        uint256 plantaId; 
+        uint256 plantaId;
         string estado;
         Timestamp fechaActualizacion;
     }
@@ -105,8 +110,8 @@ contract ViveroBogota {
     modifier validarSemilla(string memory _tipo) {
         require(
             keccak256(bytes(_tipo)) == keccak256(bytes("Frailejon")) ||
-            keccak256(bytes(_tipo)) == keccak256(bytes("Cardones")) ||
-            keccak256(bytes(_tipo)) == keccak256(bytes("Macolla")) ||
+            keccak256(bytes(_tipo)) == keccak256(bytes("Cardones"))  ||
+            keccak256(bytes(_tipo)) == keccak256(bytes("Macolla"))   ||
             keccak256(bytes(_tipo)) == keccak256(bytes("Bambues")),
             "El tipo de semilla no es valido"
         );
@@ -119,7 +124,7 @@ contract ViveroBogota {
     }
 
     constructor() {
-        owner = msg.sender; 
+        owner = msg.sender;
     }
 
     function transferirPropiedad(address nuevoDueno) public soloDueno {
@@ -138,7 +143,7 @@ contract ViveroBogota {
         uint256 _altitud,
         string memory _comentariosDeCuidado
     ) public validarSemilla(_tipo) validarCantidad(1) whenNotPaused {
-        require(_ubicacionInicial.latitud >= - 90000000 && _ubicacionInicial.latitud <= 90000000, "Latitud fuera de rango");
+        require(_ubicacionInicial.latitud >= -90000000 && _ubicacionInicial.latitud <= 90000000, "Latitud fuera de rango");
         require(_ubicacionInicial.longitud >= -180000000 && _ubicacionInicial.longitud <= 180000000, "Longitud fuera de rango");
         require(_temperatura >= -10 && _temperatura <= 15, "Temperatura fuera del rango permitido (-10 a 15 grados)");
         require(_humedadRelativa >= 50 && _humedadRelativa <= 100, "Humedad relativa fuera del rango permitido (50% a 100%)");
@@ -150,7 +155,6 @@ contract ViveroBogota {
         }
 
         totalSemillasRegistradas++;
-
         Timestamp memory fechaActual = Timestamp(block.timestamp);
 
         semillas[totalSemillasRegistradas] = Semilla({
@@ -184,7 +188,6 @@ contract ViveroBogota {
         }
 
         totalPlantasRegistradas++;
-        
         Timestamp memory fechaActual = Timestamp(block.timestamp);
 
         plantas[totalPlantasRegistradas] = Planta({
@@ -200,7 +203,7 @@ contract ViveroBogota {
 
     function actualizarEstadoPlantaYCrecimiento(uint256 _idPlanta, string memory _nuevoEstado) public whenNotPaused {
         require(_idPlanta > 0 && _idPlanta <= totalPlantasRegistradas, "ID de planta invalido");
-        
+
         if (msg.sender != owner) {
             emit ModificacionPorOtroUsuario(msg.sender, "Actualizacion de planta");
         }
@@ -336,21 +339,20 @@ contract ViveroBogota {
         uint256 semillasPorMes,
         uint256 plantasPorMes
     ) {
-        
         uint256 mesActual = block.timestamp / 30 days;
-        
+
         for (uint256 i = 1; i <= totalSemillasRegistradas; i++) {
             if (semillas[i].fechaRegistro.timestamp / 30 days == mesActual) {
                 semillasPorMes++;
             }
         }
-        
+
         for (uint256 i = 1; i <= totalPlantasRegistradas; i++) {
             if (plantas[i].fechaTraslado.timestamp / 30 days == mesActual) {
                 plantasPorMes++;
             }
         }
-        
+
         return (totalSemillasRegistradas, totalPlantasRegistradas, semillasPorMes, plantasPorMes);
     }
 
