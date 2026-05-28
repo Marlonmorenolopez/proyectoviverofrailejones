@@ -3,19 +3,14 @@
 //  Vivero Frailejones — CRE Workflow v4 FINAL
 //  SDK: @chainlink/cre-sdk v1.6.0
 //
-//  Basado 100% en la documentación oficial de Chainlink CRE
-//  Refs:
-//  - docs.chain.link/cre/getting-started/part-4-writing-onchain-ts
-//  - docs.chain.link/cre/reference/sdk/core-ts
-//  - docs.chain.link/cre/reference/sdk/evm-client-ts
-//
-//  CORRECCIONES FINALES:
-//  ✅ getSecret en Runtime (DON level), no NodeRuntime
-//  ✅ sendRequest(nodeRuntime, opts) — nodeRuntime SIN secrets
-//  ✅ consensusMedianAggregation<bigint>() — tipo simple bigint
-//  ✅ writeReport usa { receiver, report, gasConfig }
-//  ✅ runtime.report() genera el reporte firmado antes de writeReport
-//  ✅ response.body es string, JSON.parse directo
+//  CORRECCIONES APLICADAS:
+//  ✅ response.body: Uint8Array → string con TextDecoder
+//  ✅ ConsensusAggregationByFields: usa median() (tipo correcto)
+//  ✅ txResult.txStatus (no .status)
+//  ✅ gasLimit: ConfigHandlerParams solo acepta configParser y configSchema.
+//     Se usa configParser para inyectar el default "500000" antes
+//     de parsear, así el schema puede ser z.string() puro y el
+//     tipo de entrada/salida es string — compatible con StandardSchemaV1.
 // ============================================================
 
 import {
@@ -23,8 +18,8 @@ import {
   HTTPClient,
   EVMClient,
   getNetwork,
-  consensusMedianAggregation,
   ConsensusAggregationByFields,
+  median,
   handler,
   Runner,
   hexToBase64,
@@ -40,20 +35,20 @@ import {
 import { z } from "zod";
 
 // ─── Schema de configuración ──────────────────────────────
+// z.string() puro — sin default ni preprocess.
+// El default de gasLimit se aplica en configParser (ver main()).
 const configSchema = z.object({
   receptorAddress:   z.string(),
   semillaId:         z.string(),
   chainSelectorName: z.string(),
   lat:               z.string(),
   lon:               z.string(),
-  gasLimit:          z.string().default("500000"),
+  gasLimit:          z.string(),
 });
 
 type Config = z.infer<typeof configSchema>;
 
-// ─── Tipo de retorno del nodo — usa bigint ─────────────────
-// consensusMedianAggregation solo acepta NumericType (bigint|number)
-// Por eso procesamos cada campo por separado
+// ─── Tipo de retorno del nodo ──────────────────────────────
 type DatosNodo = {
   temperatura:   bigint;
   humedad:       bigint;
@@ -63,24 +58,14 @@ type DatosNodo = {
 };
 
 // ─────────────────────────────────────────────────────────
-//  FUNCIÓN NODE-LEVEL — corre en cada nodo individualmente
-//  IMPORTANTE: NodeRuntime NO tiene getSecret.
-//  La URL con apiKey se pasa vía config o se construye sin secret.
-//  Para usar secrets en HTTP, se usa el patrón de la doc oficial:
-//  el apiKey se inyecta desde la config (no-secret) o
-//  se usa sendRequest sin secrets (high-level mode).
+//  FUNCIÓN NODE-LEVEL
 // ─────────────────────────────────────────────────────────
 const fetchClima = (nodeRuntime: NodeRuntime<Config>): DatosNodo => {
 
   const httpClient = new HTTPClient();
   const lat        = nodeRuntime.config.lat;
   const lon        = nodeRuntime.config.lon;
-
-  // Nota: para usar API key secreta en HTTP, debes usar
-  // el patrón avanzado con ConfidentialHTTPClient o pasar
-  // la key en config (sin marcarla como secret).
-  // Para este ejemplo la URL usa la key de config directamente.
-  const apiKey = (nodeRuntime.config as any).owmApiKey ?? "";
+  const apiKey     = (nodeRuntime.config as any).owmApiKey ?? "";
 
   const response = httpClient
     .sendRequest(nodeRuntime, {
@@ -93,7 +78,12 @@ const fetchClima = (nodeRuntime: NodeRuntime<Config>): DatosNodo => {
     throw new Error(`Error API OpenWeather: ${response.statusCode}`);
   }
 
-  const datos = JSON.parse(response.body) as {
+  // response.body puede ser Uint8Array — convertir a string antes de JSON.parse
+  const bodyStr = typeof response.body === "string"
+    ? response.body
+    : new TextDecoder().decode(response.body);
+
+  const datos = JSON.parse(bodyStr) as {
     main:   { temp: number; humidity: number };
     rain?:  { "1h"?: number };
     clouds: { all: number };
@@ -113,18 +103,15 @@ const fetchClima = (nodeRuntime: NodeRuntime<Config>): DatosNodo => {
 // ─────────────────────────────────────────────────────────
 const onCronTrigger = (runtime: Runtime<Config>): string => {
 
-  // ── Paso 1: Consenso por campo (objeto con múltiples bigints) ──
-  // ConsensusAggregationByFields agrega cada campo del objeto
-  // por separado usando la mediana
   const reporte = runtime
     .runInNodeMode(
       fetchClima,
       ConsensusAggregationByFields<DatosNodo>({
-        temperatura:   consensusMedianAggregation<bigint>(),
-        humedad:       consensusMedianAggregation<bigint>(),
-        precipitacion: consensusMedianAggregation<bigint>(),
-        horasLuz:      consensusMedianAggregation<bigint>(),
-        timestamp:     consensusMedianAggregation<bigint>(),
+        temperatura:   () => median<bigint>(),
+        humedad:       () => median<bigint>(),
+        precipitacion: () => median<bigint>(),
+        horasLuz:      () => median<bigint>(),
+        timestamp:     () => median<bigint>(),
       })
     )()
     .result();
@@ -134,15 +121,14 @@ const onCronTrigger = (runtime: Runtime<Config>): string => {
   runtime.log(`🌧️ Precipitación: ${Number(reporte.precipitacion) / 10}mm`);
   runtime.log(`☀️ Luz solar: ${reporte.horasLuz}h`);
 
-  // ── Paso 2: Obtener la red ────────────────────────────────
+  // ── Obtener la red ────────────────────────────────────────
   const network = getNetwork({
     chainFamily:       "evm",
     chainSelectorName: runtime.config.chainSelectorName,
   });
   if (!network) throw new Error(`Red no encontrada: ${runtime.config.chainSelectorName}`);
 
-  // ── Paso 3: Codificar datos para Solidity ─────────────────
-  // Orden igual al abi.decode del contrato receptor
+  // ── Codificar datos para Solidity ─────────────────────────
   const reporteEncoded = encodeAbiParameters(
     parseAbiParameters("int256, uint256, uint256, uint256, uint256, uint256"),
     [
@@ -155,9 +141,7 @@ const onCronTrigger = (runtime: Runtime<Config>): string => {
     ]
   );
 
-  // ── Paso 4: Generar el reporte firmado por el DON ──────────
-  // runtime.report() firma los datos con la clave del DON
-  // ESTO es lo que el contrato verifica en onReport()
+  // ── Generar el reporte firmado por el DON ─────────────────
   const reportResponse = runtime
     .report({
       encodedPayload: hexToBase64(reporteEncoded),
@@ -167,8 +151,7 @@ const onCronTrigger = (runtime: Runtime<Config>): string => {
     })
     .result();
 
-  // ── Paso 5: Escribir on-chain via Forwarder ───────────────
-  // writeReport usa { receiver, report, gasConfig }
+  // ── Escribir on-chain via Forwarder ───────────────────────
   const evmClient = new EVMClient(network.chainSelector.selector);
 
   const txResult = evmClient
@@ -179,7 +162,7 @@ const onCronTrigger = (runtime: Runtime<Config>): string => {
     })
     .result();
 
-  runtime.log(`✅ TX status: ${txResult.status}`);
+  runtime.log(`✅ TX status: ${txResult.txStatus}`);
   runtime.log(`✅ Reporte escrito en ${runtime.config.receptorAddress}`);
 
   return "OK";
@@ -192,8 +175,19 @@ const initWorkflow = (config: Config) => {
 };
 
 // ─── Entry point ──────────────────────────────────────────
+// configParser recibe el Uint8Array de config crudo, lo parsea
+// como JSON e inyecta gasLimit: "500000" si no viene definido.
+// Luego configSchema valida el objeto ya con el default aplicado.
 export async function main() {
-  const runner = await Runner.newRunner<Config>({ configSchema });
+  const runner = await Runner.newRunner<Config>({
+    configParser: (raw: Uint8Array): Config => {
+      const text = new TextDecoder().decode(raw);
+      const obj  = JSON.parse(text);
+      if (!obj.gasLimit) obj.gasLimit = "500000";
+      return obj as Config;
+    },
+    configSchema,
+  });
   await runner.run(initWorkflow);
 }
 
