@@ -129,16 +129,16 @@ const onCronTrigger = (runtime: Runtime<Config>): string => {
   if (!network) throw new Error(`Red no encontrada: ${runtime.config.chainSelectorName}`);
 
   // ── Codificar datos para Solidity ─────────────────────────
+  // ── Codificar datos para Solidity (CORREGIDO PARA ENCAJAR CON EL RECEPTOR) ──
   const reporteEncoded = encodeAbiParameters(
-    parseAbiParameters("int256, uint256, uint256, uint256, uint256, uint256"),
+    parseAbiParameters("int256, uint256, uint256, uint256, uint256"), // Sacamos el 6to tipo de dato
     [
       reporte.temperatura,
       reporte.humedad,
       reporte.precipitacion,
       reporte.horasLuz,
       reporte.timestamp,
-      BigInt(runtime.config.semillaId),
-    ]
+    ] // Dejamos solo los 5 valores climáticos puros
   );
 
   // ── Generar el reporte firmado por el DON ─────────────────

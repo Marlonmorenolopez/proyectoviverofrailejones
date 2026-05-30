@@ -24,7 +24,7 @@ async function main() {
   console.log("   Balance:", hre.ethers.formatEther(balance), "ETH\n");
 
   // ⚠️ REEMPLAZA con tu Subscription ID de functions.chain.link
-  const SUBSCRIPTION_ID = 6566;
+  const SUBSCRIPTION_ID = 3015;
 
   // ── Paso 1: Desplegar el Oráculo ─────────────────────────
   console.log("📡 Desplegando ViveroClimaOracle...");

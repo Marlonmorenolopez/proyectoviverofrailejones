@@ -589,7 +589,8 @@ function EcoChainComponent() {
             </Button>
             {connectionStatus && <p className="mt-2 text-center text-sm md:text-base">{connectionStatus}</p>}
             {networkName    && <p className="mt-2 text-center text-sm md:text-base">{t.networkConnected} {networkName}</p>}
-            {accountAddress && <p className="mt-2 text-center text-sm md:text-base">{t.contractAddress} {accountAddress}</p>}
+            {accountAddress && <p className="mt-2 text-center text-sm md:text-base text-gray-700">💳 Billetera del Usuario: {accountAddress}</p>}
+            {walletConnected && contract && <p className="mt-1 text-center text-sm md:text-base font-bold text-green-700">🌿 Contrato Vivero Activo: {REDES[chainId]?.contractAddress}</p>}
           </div>
 
           {/* Selector móvil */}
