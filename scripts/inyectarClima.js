@@ -1,7 +1,12 @@
 const hre = require("hardhat");
 const fs = require("fs");
-// Carga las variables del archivo .env a la memoria de Node
-require('dotenv').config(); 
+
+// Intentar cargar .env tradicional o .env.local de Next.js
+if (fs.existsSync(".env.local")) {
+  require('dotenv').config({ path: '.env.local' });
+} else {
+  require('dotenv').config();
+}
 
 async function main() {
   console.log("🌍 Leyendo configuración del oráculo local...");
@@ -10,9 +15,17 @@ async function main() {
   const [deployer] = await hre.ethers.getSigners();
   console.log("   Cuenta oráculo (Dueño):", deployer.address);
 
-  // 1. Llamada a la API real utilizando el secreto del .env
+  // LÍNEA DE DIAGNÓSTICO
+  const apiKey = process.env.NEXT_PUBLIC_OPENWEATHER_API_KEY?.trim();
+  if (!apiKey) {
+    console.log("❌ ALERTA: La variable NEXT_PUBLIC_OPENWEATHER_API_KEY está vacía.");
+  } else {
+    console.log(`✅ Clave detectada en el entorno (Primeros 6 caracteres): ${apiKey.substring(0, 6)}...`);
+  }
+
+  // 1. Llamada a la API real
   console.log("\n📡 Obteniendo clima satelital...");
-  const url = `https://api.openweathermap.org/data/2.5/weather?lat=${config.lat}&lon=${config.lon}&appid=${process.env.NEXT_PUBLIC_OPENWEATHER_API_KEY}&units=metric`;
+  const url = `https://api.openweathermap.org/data/2.5/weather?lat=${config.lat}&lon=${config.lon}&appid=${apiKey}&units=metric`;
   
   const response = await fetch(url);
   const datos = await response.json();
@@ -29,9 +42,9 @@ async function main() {
   const horasLuz = BigInt(Math.round((1 - datos.clouds.all / 100) * 12));
   const timestamp = BigInt(Math.floor(Date.now() / 1000));
 
-  console.log(`   实时 Temp: ${Number(temperatura)/10}°C | 💧 Humedad: ${humedad}%`);
+  console.log(`   🌡️ Temp: ${Number(temperatura)/10}°C | 💧 Humedad: ${humedad}%`);
 
-  // 3. Empaquetar
+  // 3. Empaquetar corregido (Se quitó el error de asignación interna)
   const coder = new hre.ethers.AbiCoder();
   const reporteEncoded = coder.encode(
     ["int256", "uint256", "uint256", "uint256", "uint256"],

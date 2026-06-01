@@ -30,13 +30,42 @@ const ResultadoDetallado: React.FC<ResultadoDetalladoProps> = ({ resultado, gasE
 
   if (!resultado) return null;
 
+  // 🛠️ Función inteligente para formatear los enteros de la blockchain a decimales reales
+  const formatearValoresBlockchain = (key: string, value: string): string => {
+    let textoFormateado = value;
+
+    // 1. Corregir Coordenadas (Divide entre 1,000,000 si la clave habla de Ubicación o Ubicación inicial)
+    if (key.toLowerCase().includes('ubicación') || key.toLowerCase().includes('location')) {
+      textoFormateado = textoFormateado.replace(/(-?\d+)/g, (match) => {
+        if (match.length > 4) { // Evita procesar IDs o números cortos
+          return (Number(match) / 1000000).toString();
+        }
+        return match;
+      });
+    }
+
+    // 2. Corregir Temperatura (Busca números pegados a °C y los divide entre 10, ej: 134°C -> 13.4°C)
+    textoFormateado = textoFormateado.replace(/(-?\d+)(?=°C)/g, (match) => {
+      return (Number(match) / 10).toFixed(1);
+    });
+
+    // 3. Corregir Precipitación (Busca números pegados a mm y los divide entre 10, ej: 4mm -> 0.4mm)
+    textoFormateado = textoFormateado.replace(/(\d+)(?=mm)/g, (match) => {
+      return (Number(match) / 10).toFixed(1);
+    });
+
+    return textoFormateado;
+  };
+
   const lines = resultado.split('\n').filter(line => line.trim() !== '');
   const parsedResult: { [key: string]: string } = {};
 
   lines.forEach(line => {
     const [key, ...valueParts] = line.split(':');
     const value = valueParts.join(':').trim();
-    parsedResult[key.trim()] = value;
+    
+    // Aplicamos el formateo de decimales antes de guardar el resultado en la lista
+    parsedResult[key.trim()] = formatearValoresBlockchain(key.trim(), value);
   });
 
   return (
@@ -66,4 +95,3 @@ const ResultadoDetallado: React.FC<ResultadoDetalladoProps> = ({ resultado, gasE
 };
 
 export default ResultadoDetallado;
-

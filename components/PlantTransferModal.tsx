@@ -29,6 +29,7 @@ interface PlantTransferModalProps {
   // Wallet conectada
   signer?:         ethers.Signer | null;
   chainId?:        number;
+  nftAddress?:     string; // 🔑 CORREGIDO: Ahora el modal acepta formalmente esta prop dinámica
 }
 
 // ─── Estados del proceso NFT ──────────────────────────────────────────────
@@ -42,7 +43,7 @@ type EstadoNFT =
   | "listo"           // NFT acuñado con éxito
   | "error";          // algo falló
 
-// ─── Dirección del contrato NFT según red ────────────────────────────────
+// ─── Dirección de respaldo por si no viene en las props ──────────────────
 
 const NFT_ADDRESSES: Record<number, string> = {
   1337:     process.env.NEXT_PUBLIC_NFT_ADDRESS_GANACHE  || "",
@@ -50,7 +51,6 @@ const NFT_ADDRESSES: Record<number, string> = {
 };
 
 // ─── Pinata API (IPFS) ────────────────────────────────────────────────────
-// Crea tu cuenta gratis en https://pinata.cloud y agrega tus keys al .env
 
 const PINATA_API_KEY    = process.env.NEXT_PUBLIC_PINATA_API_KEY    || "";
 const PINATA_API_SECRET = process.env.NEXT_PUBLIC_PINATA_API_SECRET || "";
@@ -74,9 +74,10 @@ const PlantTransferModal: React.FC<PlantTransferModalProps> = ({
   altitud        = 3200,
   signer         = null,
   chainId        = 1337,
+  nftAddress     = "", // 🔑 CORREGIDO: Destructuración de la variable dinámica
 }) => {
 
-  // ── Estados de cámara (tu código original, sin cambios) ───────────────
+  // ── Estados de cámara originales ──────────────────────────────────────
   const [isCameraActive, setIsCameraActive]   = useState(false);
   const [capturedImageState, setCapturedImageState] = useState<string | null>(null);
   const [isRecording, setIsRecording]         = useState(false);
@@ -85,7 +86,7 @@ const PlantTransferModal: React.FC<PlantTransferModalProps> = ({
   const [showVideoPlayer, setShowVideoPlayer] = useState(false);
   const [isMobile, setIsMobile]               = useState(false);
 
-  // ── Estados del proceso NFT ───────────────────────────────────────────
+  // ── Estados del proceso NFT originales ────────────────────────────────
   const [estadoNFT, setEstadoNFT]           = useState<EstadoNFT>("idle");
   const [tokenIdAcunado, setTokenIdAcunado] = useState<number | null>(null);
   const [ipfsImageHash, setIpfsImageHash]   = useState<string>("");
@@ -93,7 +94,7 @@ const PlantTransferModal: React.FC<PlantTransferModalProps> = ({
   const [mensajeNFT, setMensajeNFT]         = useState<string>("");
   const [errorNFT, setErrorNFT]             = useState<string>("");
 
-  // ── Refs (tu código original, sin cambios) ────────────────────────────
+  // ── Refs originales ───────────────────────────────────────────────────
   const videoRef        = useRef<HTMLVideoElement>(null);
   const canvasRef       = useRef<HTMLCanvasElement>(null);
   const mediaRecorderRef = useRef<MediaRecorder | null>(null);
@@ -109,7 +110,7 @@ const PlantTransferModal: React.FC<PlantTransferModalProps> = ({
     return () => window.removeEventListener('resize', checkMobile);
   }, []);
 
-  // ── Lógica de cámara (tu código original, sin cambios) ───────────────
+  // ── Lógica de cámara original ────────────────────────────────────────
 
   const handleDataAvailable = useCallback((event: BlobEvent) => {
     if (event.data.size > 0) chunksRef.current.push(event.data);
@@ -172,7 +173,6 @@ const PlantTransferModal: React.FC<PlantTransferModalProps> = ({
       if (ctx) {
         ctx.drawImage(videoRef.current, 0, 0, canvasRef.current.width, canvasRef.current.height);
         setCapturedImageState(canvasRef.current.toDataURL('image/png'));
-        // Resetear NFT cuando se toma nueva foto
         setEstadoNFT("idle");
         setTokenIdAcunado(null);
         setIpfsImageHash("");
@@ -214,11 +214,8 @@ const PlantTransferModal: React.FC<PlantTransferModalProps> = ({
     }
   }, [capturedImageState, especie, idPlanta]);
 
-  // ─────────────────────────────────────────────────────────────────────
-  //  FUNCIONES NFT — NUEVAS
-  // ─────────────────────────────────────────────────────────────────────
+  // ── Lógica de conversión Base64 a Blob original ───────────────────────
 
-  // Convierte un dataURL (base64) a Blob para subirlo a Pinata
   const dataURLaBlob = (dataURL: string): Blob => {
     const [header, data] = dataURL.split(',');
     const mime  = header.match(/:(.*?);/)![1];
@@ -228,7 +225,6 @@ const PlantTransferModal: React.FC<PlantTransferModalProps> = ({
     return new Blob([arr], { type: mime });
   };
 
-  // Sube un archivo a IPFS via Pinata y devuelve el hash
   const subirArchivoIPFS = async (blob: Blob, nombre: string): Promise<string> => {
     const formData = new FormData();
     formData.append('file', blob, nombre);
@@ -238,7 +234,6 @@ const PlantTransferModal: React.FC<PlantTransferModalProps> = ({
     const response = await fetch("https://api.pinata.cloud/pinning/pinFileToIPFS", {
       method: "POST",
       headers: {
-        // Usa JWT (recomendado) o API Key + Secret
         ...(PINATA_JWT
           ? { Authorization: `Bearer ${PINATA_JWT}` }
           : { pinata_api_key: PINATA_API_KEY, pinata_secret_api_key: PINATA_API_SECRET }
@@ -253,10 +248,9 @@ const PlantTransferModal: React.FC<PlantTransferModalProps> = ({
     }
 
     const data = await response.json();
-    return data.IpfsHash; // ej: "QmXxxxx..."
+    return data.IpfsHash;
   };
 
-  // Sube el JSON de metadata a IPFS y devuelve el hash
   const subirMetadataIPFS = async (imageHash: string, videoHash?: string): Promise<string> => {
     const fechaISO = new Date().toISOString().split('T')[0];
 
@@ -264,7 +258,6 @@ const PlantTransferModal: React.FC<PlantTransferModalProps> = ({
       name:        `${especie} #${idPlanta} — Páramo`,
       description: `Certificado de conservación del páramo colombiano. ${especie} trasladada por ${responsable} el ${fechaISO}. Verificado en blockchain.`,
       image:       `ipfs://${imageHash}`,
-      // Si tiene video, se agrega como animation_url (compatible con OpenSea)
       ...(videoHash ? { animation_url: `ipfs://${videoHash}` } : {}),
       external_url: `https://tu-proyecto-vivero.com/planta/${idPlanta}`,
       attributes: [
@@ -302,7 +295,7 @@ const PlantTransferModal: React.FC<PlantTransferModalProps> = ({
     return data.IpfsHash;
   };
 
-  // Función principal: foto → IPFS → contrato NFT
+  // 🚀 Función maestra para acuñar el NFT utilizando la dirección inteligente
   const crearNFT = async () => {
     if (!capturedImageState) {
       setErrorNFT("❌ Primero toma una foto de la planta.");
@@ -313,9 +306,10 @@ const PlantTransferModal: React.FC<PlantTransferModalProps> = ({
       return;
     }
 
-    const nftAddress = NFT_ADDRESSES[chainId];
-    if (!nftAddress) {
-      setErrorNFT("❌ Contrato NFT no configurado para esta red. Revisa tu .env");
+    // 🔑 CORREGIDO: Primero intenta usar la dirección dinámica inyectada desde el .env, si no, usa el respaldo
+    const nftContratoAddress = nftAddress || NFT_ADDRESSES[chainId];
+    if (!nftContratoAddress) {
+      setErrorNFT("❌ Contrato NFT no configurado para esta red. Revisa tu archivo .env");
       return;
     }
 
@@ -354,12 +348,12 @@ const PlantTransferModal: React.FC<PlantTransferModalProps> = ({
       setEstadoNFT("minteando");
       setMensajeNFT("⛓️ Acuñando NFT en la blockchain...");
 
-      const nftContrato = new ethers.Contract(nftAddress, nftABI, signer);
+      const nftContrato = new ethers.Contract(nftContratoAddress, nftABI, signer);
       const walletAddress = await signer.getAddress();
 
       const tx = await nftContrato.acunarNFT(
-        walletAddress,           // propietario
-        tokenURI,                // URI del metadata en IPFS
+        walletAddress,           
+        tokenURI,                
         idPlanta,
         idSemilla,
         especie,
@@ -372,10 +366,9 @@ const PlantTransferModal: React.FC<PlantTransferModalProps> = ({
         imageHash
       );
 
-      setMensajeNFT("⏳ Esperando confirmación en la blockchain...");
+      setMensajeNFT("⏳ Esperando confirmación en la blockchain de Sepolia...");
       const receipt = await tx.wait();
 
-      // Obtener el tokenId del evento emitido
       const evento = receipt.logs
         .map((log: any) => { try { return nftContrato.interface.parseLog(log); } catch { return null; } })
         .find((e: any) => e?.name === "NFTAcunado");
@@ -392,7 +385,7 @@ const PlantTransferModal: React.FC<PlantTransferModalProps> = ({
     }
   };
 
-  // ─── Helpers de UI ────────────────────────────────────────────────────
+  // ─── Helpers de UI originales ─────────────────────────────────────────
 
   const getColorEstado = () => {
     switch (estadoNFT) {
@@ -421,10 +414,6 @@ const PlantTransferModal: React.FC<PlantTransferModalProps> = ({
       default:               return "🖼️ Crear NFT con esta foto";
     }
   };
-
-  // ─────────────────────────────────────────────────────────────────────
-  //  DIALOGS (tus originales, sin cambios)
-  // ─────────────────────────────────────────────────────────────────────
 
   const renderImageDialog = () => (
     <Dialog.Root open={showImageDialog} onOpenChange={setShowImageDialog}>
@@ -480,10 +469,6 @@ const PlantTransferModal: React.FC<PlantTransferModalProps> = ({
     </Dialog.Root>
   );
 
-  // ─────────────────────────────────────────────────────────────────────
-  //  RENDER PRINCIPAL
-  // ─────────────────────────────────────────────────────────────────────
-
   return (
     <Dialog.Root open={isOpen} onOpenChange={onOpenChange}>
       <Dialog.Portal>
@@ -504,7 +489,7 @@ const PlantTransferModal: React.FC<PlantTransferModalProps> = ({
 
           <div className="flex flex-col md:flex-row md:space-x-4">
 
-            {/* ── Panel izquierdo: cámara (tu código original) ── */}
+            {/* Panel izquierdo */}
             <Card className="w-full md:w-[500px] bg-white shadow-xl rounded-xl overflow-hidden mb-4 md:mb-0">
               <CardContent className="p-4 md:p-6">
                 <div className="space-y-4">
@@ -553,7 +538,7 @@ const PlantTransferModal: React.FC<PlantTransferModalProps> = ({
                 </div>
                 <canvas ref={canvasRef} className="hidden" width={640} height={480} />
 
-                {/* ── SECCIÓN NFT — NUEVA ─────────────────────────── */}
+                {/* SECCIÓN NFT */}
                 {capturedImageState && (
                   <div className="mt-4 space-y-3">
                     <div className="border-t border-gray-200 pt-4">
@@ -561,7 +546,6 @@ const PlantTransferModal: React.FC<PlantTransferModalProps> = ({
                         🖼️ Certificar en Blockchain
                       </p>
 
-                      {/* Preview de la foto capturada */}
                       <div className="rounded-lg overflow-hidden mb-3 border border-gray-200">
                         <img
                           src={capturedImageState}
@@ -574,7 +558,6 @@ const PlantTransferModal: React.FC<PlantTransferModalProps> = ({
                         </p>
                       </div>
 
-                      {/* Botón crear NFT */}
                       <Button
                         onClick={crearNFT}
                         disabled={botonNFTDeshabilitado}
@@ -587,21 +570,18 @@ const PlantTransferModal: React.FC<PlantTransferModalProps> = ({
                         {textoBotonNFT()}
                       </Button>
 
-                      {/* Mensaje de progreso */}
                       {mensajeNFT && (
                         <div className={`mt-2 p-3 rounded-lg border text-sm ${getColorEstado()}`}>
                           {mensajeNFT}
                         </div>
                       )}
 
-                      {/* Error */}
                       {errorNFT && (
                         <div className="mt-2 p-3 rounded-lg border bg-red-50 border-red-300 text-red-700 text-sm">
                           {errorNFT}
                         </div>
                       )}
 
-                      {/* Resultado exitoso */}
                       {estadoNFT === "listo" && tokenIdAcunado && (
                         <div className="mt-3 p-4 bg-green-50 border border-green-200 rounded-lg space-y-2">
                           <p className="font-bold text-green-800">🎉 NFT #{tokenIdAcunado} creado</p>
@@ -615,7 +595,7 @@ const PlantTransferModal: React.FC<PlantTransferModalProps> = ({
                           )}
                           {chainId === 11155111 && (
                             <a
-                              href={`https://testnets.opensea.io/assets/sepolia/${NFT_ADDRESSES[chainId]}/${tokenIdAcunado}`}
+                              href={`https://testnets.opensea.io/assets/sepolia/${nftAddress || NFT_ADDRESSES[chainId]}/${tokenIdAcunado}`}
                               target="_blank"
                               rel="noopener noreferrer"
                               className="block text-xs text-blue-600 underline hover:text-blue-800 mt-1"
@@ -639,7 +619,7 @@ const PlantTransferModal: React.FC<PlantTransferModalProps> = ({
               </CardContent>
             </Card>
 
-            {/* ── Panel derecho: preview (tu código original) ── */}
+            {/* Panel derecho */}
             <Card className="w-full md:w-[350px] mx-auto">
               <CardContent>
                 <div className="mb-6 text-center">
@@ -667,7 +647,6 @@ const PlantTransferModal: React.FC<PlantTransferModalProps> = ({
                     )}
                   </div>
 
-                  {/* Info de la planta */}
                   <div className="mt-3 text-left space-y-1 text-sm text-gray-600">
                     <p><span className="font-semibold">Especie:</span> {especie}</p>
                     <p><span className="font-semibold">ID Planta:</span> #{idPlanta}</p>

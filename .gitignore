@@ -8,6 +8,7 @@
 
 # testing
 /coverage
+/coverage.json
 
 # next.js
 /.next/
@@ -26,6 +27,7 @@ yarn-debug.log*
 yarn-error.log*
 
 # local env files
+.env
 .env*.local
 
 # vercel
@@ -35,9 +37,6 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 
-node_modules
-.env
-
 # Hardhat files
 /cache
 /artifacts
@@ -46,27 +45,8 @@ node_modules
 /typechain
 /typechain-types
 
-# solidity-coverage files
-/coverage
-/coverage.json
-
-# Hardhat Ignition default folder for deployments against a local node
+# Hardhat Ignition deployments against local node
 ignition/deployments/chain-31337
 
-node_modules
-.env
-
-# Hardhat files
-/cache
-/artifacts
-
-# TypeChain files
-/typechain
-/typechain-types
-
-# solidity-coverage files
-/coverage
-/coverage.json
-
-# Hardhat Ignition default folder for deployments against a local node
-ignition/deployments/chain-31337
+# Remix IDE state (no pertenece al repo)
+contracts/.states/

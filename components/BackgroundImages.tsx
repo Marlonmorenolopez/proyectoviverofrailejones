@@ -4,9 +4,8 @@
       <img
         src="/images/frailejones.png"
         alt="Frailejón"
-className="absolute top-0 left-0 w-full h-full object-cover opacity-75"
+        className="absolute top-0 left-0 w-full h-full object-cover opacity-75"
       />
-     /
       <img
         src="/images/paramo-plant.png"
         alt="Planta nativa"

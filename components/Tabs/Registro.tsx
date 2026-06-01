@@ -22,12 +22,14 @@ interface RegistroProps {
   setResultado:      React.Dispatch<React.SetStateAction<string>>;
   setGasEstimate:    React.Dispatch<React.SetStateAction<string>>;
   walletConnected:   boolean;
-  actualizarTotales: () => Promise<void>;
+  // Se actualiza la firma para recibir opcionalmente la latitud y longitud dinámicas
+  actualizarTotales: (latitud?: number, longitud?: number) => Promise<void>;
   language:          'es' | 'en' | 'fr' | 'de';
 }
 
 const Registro: React.FC<RegistroProps> = ({
   contract,
+  oracleContract, // Se añade a la destructuración para mantener consistencia con los props
   chainId,
   tieneOracle,
   signer,
@@ -208,15 +210,14 @@ const Registro: React.FC<RegistroProps> = ({
     const altitud              = parseFloat(formData.get('altitud') as string);
     const comentariosDeCuidado = formData.get('comentariosDeCuidado') as string;
 
+    // Captura los valores float exactos ingresados por pantalla
+    const latitudExacta  = parseFloat(formLatitud)  || latitud;
+    const longitudExacta = parseFloat(formLongitud) || longitud;
+
     try {
       setResultado("⏳ Transmitiendo registro a la red Sepolia...");
 
-     if (tieneOracle) {
-        // 1. Forzamos la captura del valor float exacto escrito por el usuario en la pantalla
-        const latitudExacta  = parseFloat(formLatitud)  || latitud;
-        const longitudExacta = parseFloat(formLongitud) || longitud;
-
-        // 2. Transmitimos multiplicando directamente el decimal real por el millón
+      if (tieneOracle) {
         const tx = await contract.registrarSemilla(
           tipo,
           { 
@@ -268,7 +269,8 @@ const Registro: React.FC<RegistroProps> = ({
         setResultado(`✅ Semilla local registrada con éxito.\nHash: ${tx.hash}`);
       }
 
-      actualizarTotales();
+      // Se envían las coordenadas reales al disparador automático para consultar OpenWeatherMap
+      await actualizarTotales(latitudExacta, longitudExacta);
     } catch (error) {
       console.error("Error al registrar la semilla:", error);
       setResultado(`❌ Error al registrar la semilla: ${(error as Error).message}`);
@@ -302,6 +304,8 @@ const Registro: React.FC<RegistroProps> = ({
         comentariosDeCuidado
       );
       await tx.wait();
+      
+      // Se llama de forma segura sin parámetros para actualizar solo contadores visuales de traslados
       await actualizarTotales();
 
       const totalPlantas = await contract.totalPlantasRegistradas();
@@ -519,7 +523,7 @@ const Registro: React.FC<RegistroProps> = ({
         capturedImage={null}
         idPlanta={ultimaPlanta?.idPlanta      ?? 0}
         idSemilla={ultimaPlanta?.idSemilla    ?? 0}
-        especie={ultimaPlanta?.especie         ?? formTipo || "Planta"}
+        especie={ultimaPlanta?.especie ?? formTipo ?? "Planta"} // Con puros operadores ?? impecable
         responsable={ultimaPlanta?.responsable ?? trasResponsable}
         latitud={ultimaPlanta?.latitud         ?? 0}
         longitud={ultimaPlanta?.longitud        ?? 0}

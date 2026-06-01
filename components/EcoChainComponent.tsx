@@ -9,7 +9,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter }
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
-import { Wallet, Globe } from 'lucide-react';
+import { Wallet } from 'lucide-react';
 import { motion } from "framer-motion";
 import { BackgroundImages } from './BackgroundImages';
 import Registro from './Tabs/Registro';
@@ -21,15 +21,11 @@ import ResultadoDetallado from './ResultadoDetallado';
 import { LanguageProvider, useLanguage } from './contexts/LanguageContext';
 
 // ─── ABIs: uno por red ────────────────────────────────────────────────────
-// ✅ NUEVO: dos ABIs según la red (Ganache usa el original, Sepolia el del oráculo)
 import contractABI_ganache from '@/abis/contractABI_ganache.json';
 import contractABI_sepolia from '@/abis/contractABI_sepolia.json';
 import oracleABI           from '@/abis/oracleABI.json';
 
-import "../styles/globals.css";
-
 // ─── Configuración de redes ────────────────────────────────────────────────
-// ✅ NUEVO: nftAddress y abi específico por red
 const REDES: Record<number, {
   nombre:          string;
   tieneOracle:     boolean;
@@ -57,7 +53,6 @@ const REDES: Record<number, {
 };
 
 // ─── Tipos e interfaces ────────────────────────────────────────────────────
-
 type ObtenerSemilla = (id: number) => Promise<Semilla>;
 type RegistrarSemilla = {
   (tipo: string, ubicacionInicial: { latitud: number; longitud: number }, responsable: string, temperatura: number, humedadRelativa: number, precipitacion: number, horasLuzSolar: number, altitud: number, comentariosDeCuidado: string): Promise<ethers.ContractTransactionResponse>;
@@ -81,8 +76,6 @@ type EliminarSemilla                     = (idSemilla: number) => Promise<ethers
 type EliminarPlanta                      = (idPlanta: number) => Promise<ethers.ContractTransactionResponse>;
 type ActualizarCondicionesClimaticas     = (idSemilla: number, nuevasCondiciones: CondicionesClimaticas) => Promise<ethers.ContractTransactionResponse>;
 type AgregarComentario                   = (idSemilla: number, comentario: string) => Promise<ethers.ContractTransactionResponse>;
-type ObtenerEstadisticas                 = () => Promise<[bigint, bigint, bigint]>;
-type ObtenerEventos                      = () => Promise<string[]>;
 type ObtenerHistorialDeCambios           = (idSemilla: number) => Promise<HistorialCrecimiento[]>;
 type Pausar                              = () => Promise<ethers.ContractTransactionResponse>;
 type Despausar                           = () => Promise<ethers.ContractTransactionResponse>;
@@ -90,7 +83,6 @@ type AgregarAdministrador                = (nuevadireccion: string) => Promise<e
 type RemoverAdministrador                = (direccion: string) => Promise<ethers.ContractTransactionResponse>;
 type ObtenerTodasLasSemillas             = () => Promise<Semilla[]>;
 type BuscarSemillasPorResponsable        = (responsable: string) => Promise<number[]>;
-type ObtenerEstadisticasDetalladas       = () => Promise<[bigint, bigint, bigint, bigint]>;
 type VerificarCondicionesClimaticas      = (idSemilla: number) => Promise<ethers.ContractTransactionResponse>;
 
 export interface ViveroInterface extends ethers.BaseContract {
@@ -111,8 +103,6 @@ export interface ViveroInterface extends ethers.BaseContract {
   eliminarPlanta:                    EliminarPlanta;
   actualizarCondicionesClimaticas:   ActualizarCondicionesClimaticas;
   agregarComentario:                 AgregarComentario;
-  obtenerEstadisticas:               ObtenerEstadisticas;
-  obtenerEventos:                    ObtenerEventos;
   obtenerHistorialDeCambios:         ObtenerHistorialDeCambios;
   pausar:                            Pausar;
   despausar:                         Despausar;
@@ -120,7 +110,6 @@ export interface ViveroInterface extends ethers.BaseContract {
   removerAdministrador:              RemoverAdministrador;
   obtenerTodasLasSemillas:           ObtenerTodasLasSemillas;
   buscarSemillasPorResponsable:      BuscarSemillasPorResponsable;
-  obtenerEstadisticasDetalladas:     ObtenerEstadisticasDetalladas;
   verificarCondicionesClimaticas:    VerificarCondicionesClimaticas;
 }
 
@@ -166,8 +155,6 @@ export type CondicionesClimaticas = {
 };
 
 // ─── Helpers ──────────────────────────────────────────────────────────────
-
-// ✅ ACTUALIZADO: recibe el ABI correcto en vez de importar uno fijo
 function getViveroContract(address: string, signer: ethers.Signer, abi: any[]): ViveroInterface {
   return new ethers.Contract(address, abi, signer) as unknown as ViveroInterface;
 }
@@ -176,16 +163,7 @@ function getOracleContract(address: string, signer: ethers.Signer): ethers.Contr
   return new ethers.Contract(address, oracleABI, signer);
 }
 
-function bigIntToString(obj: any): any {
-  if (typeof obj === 'bigint') return obj.toString();
-  if (Array.isArray(obj)) return obj.map(bigIntToString);
-  if (typeof obj === 'object' && obj !== null)
-    return Object.fromEntries(Object.entries(obj).map(([k, v]) => [k, bigIntToString(v)]));
-  return obj;
-}
-
 // ─── Selector de idioma ───────────────────────────────────────────────────
-
 const LanguageSelector: React.FC = () => {
   const { language, setLanguage } = useLanguage();
   return (
@@ -204,11 +182,9 @@ const LanguageSelector: React.FC = () => {
 };
 
 // ─── Componente principal ─────────────────────────────────────────────────
-
 function EcoChainComponent() {
   const [contract,       setContract]       = useState<ViveroInterface | null>(null);
   const [oracleContract, setOracleContract] = useState<ethers.Contract | null>(null);
-  // ✅ NUEVOS: signer y nftAddress disponibles globalmente para pasarlos a Registro
   const [signer,         setSigner]         = useState<ethers.Signer | null>(null);
   const [nftAddress,     setNftAddress]     = useState<string>("");
 
@@ -241,7 +217,7 @@ function EcoChainComponent() {
       totalSeeds: "Total de Semillas Registradas:",
       totalPlants: "Total de Plantas Trasladadas:",
       connectWallet: "Conectar Billetera",
-      walletConnected: "Billetera Conectada",
+      walletConnected: "Billetera Connected",
       networkConnected: "Red conectada:",
       contractAddress: "Dirección del contrato:",
       selectSection: "Seleccionar sección",
@@ -342,7 +318,7 @@ function EcoChainComponent() {
       manualBadge: "✏️ Manueller Modus (Ganache)",
       errors: {
         walletNotInstalled: "MetaMask ist nicht installiert",
-        wrongNetwork: "Netzwerk nicht unterstützt. Verbinde mit Hardhat Local (31337) oder Sepolia (11155111)",
+        wrongNetwork: "Netzwerk nicht unterstützt. Verbinde mit Hardhat Local (31337) o Sepolia (11155111)",
         connectionError: "Verbindungsfehler: ",
         unknownError: "Unbekannter Verbindungsfehler",
         statsError: "Fehler beim Abrufen der Statistiken: ",
@@ -353,8 +329,6 @@ function EcoChainComponent() {
   };
 
   const t = translations[language];
-
-  // ── Conectar wallet — acepta Ganache Y Sepolia ─────────────
 
   const connectWallet = async () => {
     try {
@@ -370,13 +344,11 @@ function EcoChainComponent() {
       if (!REDES[id]) throw new Error(t.errors.wrongNetwork);
 
       const redConfig = REDES[id];
-
       if (!redConfig.contractAddress) throw new Error(t.errors.noContractAddress);
 
       const _signer = await provider.getSigner();
       const address = await _signer.getAddress();
 
-      // ✅ NUEVO: guardar signer y nftAddress en estado
       setSigner(_signer);
       setNftAddress(redConfig.nftAddress);
       setAccountAddress(address);
@@ -384,7 +356,6 @@ function EcoChainComponent() {
       setChainId(id);
       setTieneOracle(redConfig.tieneOracle);
 
-      // ✅ ACTUALIZADO: pasa el ABI correcto según la red
       const contractInstance = getViveroContract(redConfig.contractAddress, _signer, redConfig.abi);
       setContract(contractInstance);
 
@@ -406,32 +377,20 @@ function EcoChainComponent() {
     }
   };
 
-  // Detectar cambio de red en MetaMask automáticamente
   useEffect(() => {
     if (typeof window.ethereum !== 'undefined') {
       window.ethereum.on('chainChanged', () => {
         setWalletConnected(false);
         setContract(null);
         setOracleContract(null);
-        setSigner(null);       // ✅ NUEVO
-        setNftAddress("");     // ✅ NUEVO
+        setSigner(null);       
+        setNftAddress("");     
         setConnectionStatus("");
         setNetworkName("");
         setChainId(0);
       });
     }
   }, []);
-
-  const updateTotals = async (contractInstance: ViveroInterface) => {
-    try {
-      const semillas: bigint = await contractInstance.totalSemillasRegistradas();
-      const plantas: bigint  = await contractInstance.totalPlantasRegistradas();
-      setTotalSemillas(Number(semillas));
-      setTotalPlantas(Number(plantas));
-    } catch (error) {
-      console.error(t.errors.updateTotalsError, error);
-    }
-  };
 
   const actualizarEstadisticasParamo = async () => {
     if (!contract) return;
@@ -460,6 +419,55 @@ function EcoChainComponent() {
     }
   };
 
+  // 🚀 NUEVA FUNCIÓN MAESTRA: Disparador del Oráculo Automático Backend 🤖
+  const handleSeedRegisteredAutomation = async (latitud?: number, longitud?: number) => {
+    if (!contract) return;
+    
+    // 🔍 Validamos: Si no viene latitud o longitud (como en los traslados), solo refrescamos totales
+    if (latitud === undefined || longitud === undefined || !tieneOracle) {
+      await actualizarTotales();
+      await actualizarEstadisticasParamo();
+      return;
+    }
+
+    try {
+      setResultado("⏳ Semilla creada en Sepolia. Despertando oráculo automático en el servidor...");
+      
+      // A. Consultamos cuántas semillas van en total para saber el ID exacto autoincrementado (1, 2, 3...)
+      const semillasCount = await contract.totalSemillasRegistradas();
+      const idGenerado = Number(semillasCount);
+
+      setResultado(prev => prev + `\n📡 ID detectado: ${idGenerado}. Solicitando clima satelital para las coordenadas (${latitud}, ${longitud})...`);
+
+      // B. Hacemos el envío secreto a nuestra API Route segura en Next.js
+      const respuestaBackend = await fetch('/api/inject-climate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          semillaId: idGenerado,
+          lat: latitud,
+          lon: longitud
+        })
+      });
+
+      const dataJson = await respuestaBackend.json();
+
+      if (dataJson.success) {
+        setResultado(prev => prev + `\n\n✅ ¡MISION CUMPLIDA EN SEGUNDO PLANO!\nOráculo inyectó con éxito para el ID: ${idGenerado}\nClima Satelital: ${dataJson.info.temp}°C | Humedad: ${dataJson.info.hum}%`);
+      } else {
+        setResultado(prev => prev + `\n\n❌ El oráculo automático en servidor falló: ${dataJson.error}`);
+      }
+
+    } catch (errorAutomation) {
+      console.error("Error en la llamada de automatización:", errorAutomation);
+      setResultado(prev => prev + `\n\n❌ Error crítico de red al conectar con el backend.`);
+    } finally {
+      // Refrescar los tableros con los nuevos datos consolidados
+      await actualizarTotales();
+      await actualizarEstadisticasParamo();
+    }
+  };
+
   const handleTabChange = (value: string) => setActiveTab(value);
 
   useEffect(() => {
@@ -471,7 +479,7 @@ function EcoChainComponent() {
 
   useEffect(() => {
     if (walletConnected && contract) {
-      updateTotals(contract);
+      actualizarTotales();
       actualizarEstadisticasParamo();
     }
   }, [walletConnected, contract]);
@@ -551,7 +559,6 @@ function EcoChainComponent() {
             <LanguageSelector />
           </div>
 
-          {/* ── Badge de red activa ── */}
           {walletConnected && (
             <div className={`mb-4 text-center text-sm font-semibold py-1 px-3 rounded-full inline-block ${
               tieneOracle
@@ -593,7 +600,6 @@ function EcoChainComponent() {
             {walletConnected && contract && <p className="mt-1 text-center text-sm md:text-base font-bold text-green-700">🌿 Contrato Vivero Activo: {REDES[chainId]?.contractAddress}</p>}
           </div>
 
-          {/* Selector móvil */}
           <div className="md:hidden mb-4">
             <Select onValueChange={handleTabChange} value={activeTab}>
               <SelectTrigger className="w-full">
@@ -609,7 +615,6 @@ function EcoChainComponent() {
             </Select>
           </div>
 
-          {/* Tabs desktop */}
           <div className="hidden md:block">
             <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full">
               <TabsList className="grid w-full grid-cols-5 gap-1 mb-4">
@@ -622,10 +627,9 @@ function EcoChainComponent() {
             </Tabs>
           </div>
 
-          {/* Contenido de tabs */}
           <div className="mt-4">
             {activeTab === "registro" && (
-              // ✅ ACTUALIZADO: se pasan signer y nftAddress para el modal NFT
+              // ⚙️ SE AÑADE EL PASO DE NUESTRO PROP DE AUTOMATIZACIÓN COMPLETAMENTE VINCULADO
               <Registro
                 contract={contract}
                 oracleContract={oracleContract}
@@ -636,7 +640,7 @@ function EcoChainComponent() {
                 setResultado={setResultado}
                 setGasEstimate={setGasEstimate}
                 walletConnected={walletConnected}
-                actualizarTotales={actualizarTotales}
+                actualizarTotales={handleSeedRegisteredAutomation} // <-- Redirigido al disparador del oráculo
                 language={language}
               />
             )}
