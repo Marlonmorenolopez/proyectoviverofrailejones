@@ -1,5 +1,7 @@
 const hre = require("hardhat");
 const fs = require("fs");
+// Carga las variables del archivo .env a la memoria de Node
+require('dotenv').config(); 
 
 async function main() {
   console.log("🌍 Leyendo configuración del oráculo local...");
@@ -8,9 +10,9 @@ async function main() {
   const [deployer] = await hre.ethers.getSigners();
   console.log("   Cuenta oráculo (Dueño):", deployer.address);
 
-  // 1. Llamada a la API real
+  // 1. Llamada a la API real utilizando el secreto del .env
   console.log("\n📡 Obteniendo clima satelital...");
-  const url = `https://api.openweathermap.org/data/2.5/weather?lat=${config.lat}&lon=${config.lon}&appid=${config.owmApiKey}&units=metric`;
+  const url = `https://api.openweathermap.org/data/2.5/weather?lat=${config.lat}&lon=${config.lon}&appid=${process.env.NEXT_PUBLIC_OPENWEATHER_API_KEY}&units=metric`;
   
   const response = await fetch(url);
   const datos = await response.json();
@@ -27,7 +29,7 @@ async function main() {
   const horasLuz = BigInt(Math.round((1 - datos.clouds.all / 100) * 12));
   const timestamp = BigInt(Math.floor(Date.now() / 1000));
 
-  console.log(`   🌡️ Temp: ${Number(temperatura)/10}°C | 💧 Humedad: ${humedad}%`);
+  console.log(`   实时 Temp: ${Number(temperatura)/10}°C | 💧 Humedad: ${humedad}%`);
 
   // 3. Empaquetar
   const coder = new hre.ethers.AbiCoder();

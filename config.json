@@ -1,7 +1,6 @@
 {
-  "receptorAddress": "0xD561C20a02bCe0e9D3f971Fb2Df965dF3E5F9B20",
+  "lat": "4.711",
+  "lon": "-74.0721",
   "semillaId": 1,
-  "lat": "4.7154",
-  "lon": "-74.12337",
-  "owmApiKey": "cda0ccb3bf144492c355b96699cf5d70"
+  "receptorAddress": "0x9e7B650b4e9fd25Af44B290F1f683168dF70d660"
 }
