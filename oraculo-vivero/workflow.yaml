@@ -1,0 +1,19 @@
+# ==========================================================================
+staging-settings:
+  user-workflow:
+    workflow-name: "vivero-staging"
+    network: "ethereum-testnet-sepolia"
+  workflow-artifacts:
+    workflow-path: "./main.ts"
+    config-path: "./config.staging.json"
+    secrets-path: ""
+
+# ==========================================================================
+production-settings:
+  user-workflow:
+    workflow-name: "vivero-production"
+    network: "ethereum-testnet-sepolia"
+  workflow-artifacts:
+    workflow-path: "./main.ts"
+    config-path: "./config.production.json"
+    secrets-path: ""

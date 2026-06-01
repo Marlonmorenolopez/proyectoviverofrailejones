@@ -2,7 +2,8 @@
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Search, History, List, Filter } from 'lucide-react';
+import { Card, CardContent } from "@/components/ui/card";
+import { Search, History, List, Filter, CloudRain, Sun, Thermometer, Droplets, Clock } from 'lucide-react';
 import { ViveroInterface } from '../EcoChainComponent';
 
 interface ConsultaProps {
@@ -16,6 +17,9 @@ const Consulta: React.FC<ConsultaProps> = ({ contract, setResultado, language })
     const [plantaId, setPlantaId] = useState('');
     const [responsableFilter, setResponsableFilter] = useState('');
     const [semillasFiltradas, setSemillasFiltradas] = useState<number[]>([]);
+    
+    // Estado para almacenar la telemetría en tiempo real del oráculo
+    const [telemetria, setTelemetria] = useState<any>(null);
 
     const translations = {
         es: {
@@ -35,7 +39,14 @@ const Consulta: React.FC<ConsultaProps> = ({ contract, setResultado, language })
             errorGettingHistory: "Error al obtener el historial de crecimiento:",
             errorGettingAllSeeds: "Error al obtener todas las semillas:",
             errorSearchingSeeds: "Error al buscar semillas por responsable:",
-            seedsFound: "Semillas encontradas:"
+            seedsFound: "Semillas encontradas:",
+            // Nuevas traducciones para el Oráculo Real
+            oracleTitle: "Telemetría Satelital Real (Oráculo CRE)",
+            temp: "Temp",
+            humidity: "Humedad",
+            rain: "Lluvia",
+            solar: "Luz Solar",
+            sync: "Sincronizado"
         },
         en: {
             title: "Query",
@@ -54,7 +65,13 @@ const Consulta: React.FC<ConsultaProps> = ({ contract, setResultado, language })
             errorGettingHistory: "Error getting growth history:",
             errorGettingAllSeeds: "Error getting all seeds:",
             errorSearchingSeeds: "Error searching seeds by responsible:",
-            seedsFound: "Seeds found:"
+            seedsFound: "Seeds found:",
+            oracleTitle: "Real Satellite Telemetry (CRE Oracle)",
+            temp: "Temp",
+            humidity: "Humidity",
+            rain: "Rain",
+            solar: "Sunlight",
+            sync: "Synchronized"
         },
         fr: {
             title: "Consultation",
@@ -73,7 +90,13 @@ const Consulta: React.FC<ConsultaProps> = ({ contract, setResultado, language })
             errorGettingHistory: "Erreur lors de l'obtention de l'historique de croissance :",
             errorGettingAllSeeds: "Erreur lors de l'obtention de toutes les graines :",
             errorSearchingSeeds: "Erreur lors de la recherche de graines par responsable :",
-            seedsFound: "Graines trouvées :"
+            seedsFound: "Graines trouvées :",
+            oracleTitle: "Télémétrie Satellitaire Réelle (Oracle CRE)",
+            temp: "Temp",
+            humidity: "Humidité",
+            rain: "Pluie",
+            solar: "Lumière",
+            sync: "Synchronisé"
         },
         de: {
             title: "Abfrage",
@@ -92,7 +115,13 @@ const Consulta: React.FC<ConsultaProps> = ({ contract, setResultado, language })
             errorGettingHistory: "Fehler beim Abrufen des Wachstumsverlaufs:",
             errorGettingAllSeeds: "Fehler beim Abrufen aller Samen:",
             errorSearchingSeeds: "Fehler bei der Suche nach Samen nach Verantwortlichem:",
-            seedsFound: "Gefundene Samen:"
+            seedsFound: "Gefundene Samen:",
+            oracleTitle: "Echte Satellitentelemetrie (CRE Orakel)",
+            temp: "Temp",
+            humidity: "Feuchtigkeit",
+            rain: "Regen",
+            solar: "Sonnenlicht",
+            sync: "Synchronisiert"
         }
     };
 
@@ -118,8 +147,12 @@ const Consulta: React.FC<ConsultaProps> = ({ contract, setResultado, language })
 
     const obtenerSemilla = async () => {
         if (!contract || !semillaId) return;
+        setTelemetria(null); // Limpiar telemetría anterior
+        
         try {
             const semillaIdParsed = parseInt(semillaId);
+            
+            // 1. Obtener datos estáticos del Smart Contract
             const semilla = await contract.obtenerSemilla(semillaIdParsed);
             const {
                 id,
@@ -143,6 +176,26 @@ const Consulta: React.FC<ConsultaProps> = ({ contract, setResultado, language })
                 Comentarios de cuidado: ${comentariosDeCuidado}
                 Fecha de registro: ${formatTimestamp(Number(fechaRegistro.timestamp))}
             `);
+
+            // 2. Consultar el Oráculo en vivo si la función existe en el contrato
+            if ((contract as any).obtenerClimaRealSemilla) {
+                try {
+                    const climaData = await (contract as any).obtenerClimaRealSemilla(semillaIdParsed);
+                    
+                    // Solo guardar si el timestamp es válido (mayor a cero)
+                    if (Number(climaData[4]) > 0) {
+                        setTelemetria({
+                            temperatura: (Number(climaData[0]) / 10).toFixed(1), // Volver a poner el decimal
+                            humedad: Number(climaData[1]).toString(),
+                            precipitacion: (Number(climaData[2]) / 10).toFixed(1),
+                            horasLuz: Number(climaData[3]).toString(),
+                            fecha: new Date(Number(climaData[4]) * 1000).toLocaleString()
+                        });
+                    }
+                } catch (e) {
+                    console.log("Semilla sin telemetría inyectada aún.");
+                }
+            }
         } catch (error) {
             console.error(t.errorGettingSeed, error);
             setResultado(t.errorGettingSeed + ' ' + (error as Error).message);
@@ -199,6 +252,43 @@ const Consulta: React.FC<ConsultaProps> = ({ contract, setResultado, language })
                 </Button>
             </div>
 
+            {/* ─── COMPONENTE VISUAL: TARJETA DEL ORÁCULO SATELITAL REAL ─── */}
+            {telemetria && (
+                <Card className="border-blue-200 bg-blue-50/40 shadow-sm transition-all duration-300">
+                    <CardContent className="p-4 space-y-3">
+                        <h4 className="font-bold text-blue-900 text-xs md:text-sm flex items-center">
+                            <CloudRain className="mr-2 text-blue-600 h-4 w-4 animate-pulse"/> 
+                            {t.oracleTitle}
+                        </h4>
+                        <div className="grid grid-cols-2 md:grid-cols-4 gap-2 text-center">
+                            <div className="bg-white p-2 rounded border border-blue-100 shadow-sm">
+                                <Thermometer className="mx-auto text-red-500 h-4 w-4 mb-1"/>
+                                <p className="text-[10px] text-gray-400 font-medium">{t.temp}</p>
+                                <p className="font-bold text-sm text-gray-800">{telemetria.temperatura}°C</p>
+                            </div>
+                            <div className="bg-white p-2 rounded border border-blue-100 shadow-sm">
+                                <Droplets className="mx-auto text-blue-500 h-4 w-4 mb-1"/>
+                                <p className="text-[10px] text-gray-400 font-medium">{t.humidity}</p>
+                                <p className="font-bold text-sm text-gray-800">{telemetria.humedad}%</p>
+                            </div>
+                            <div className="bg-white p-2 rounded border border-blue-100 shadow-sm">
+                                <CloudRain className="mx-auto text-indigo-500 h-4 w-4 mb-1"/>
+                                <p className="text-[10px] text-gray-400 font-medium">{t.rain}</p>
+                                <p className="font-bold text-sm text-gray-800">{telemetria.precipitacion}mm</p>
+                            </div>
+                            <div className="bg-white p-2 rounded border border-blue-100 shadow-sm">
+                                <Sun className="mx-auto text-yellow-500 h-4 w-4 mb-1"/>
+                                <p className="text-[10px] text-gray-400 font-medium">{t.solar}</p>
+                                <p className="font-bold text-sm text-gray-800">{telemetria.horasLuz}h</p>
+                            </div>
+                        </div>
+                        <p className="text-right text-[10px] text-blue-800 font-medium flex items-center justify-end">
+                            <Clock className="inline h-3 w-3 mr-1"/>{t.sync}: {telemetria.fecha}
+                        </p>
+                    </CardContent>
+                </Card>
+            )}
+
             <div className="space-y-3 md:space-y-4">
                 <h3 className="text-base md:text-lg font-semibold">{t.growthHistory}</h3>
                 <div>
@@ -241,4 +331,3 @@ const Consulta: React.FC<ConsultaProps> = ({ contract, setResultado, language })
 };
 
 export default Consulta;
-
