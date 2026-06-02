@@ -11,11 +11,7 @@
         alt="Planta nativa"
         className="absolute bottom-10 right-10 w-36 h-auto opacity-75"
       />
-      <img
-        src="/images/paramo-flower.png"
-        alt="Flor de páramo"
-        className="absolute top-1/2 right-20 w-32 h-auto opacity-75"
-      />
+      
     </div>
   )
 }

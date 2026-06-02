@@ -610,10 +610,16 @@ const Registro: React.FC<RegistroProps> = ({
           <div>
             <Label htmlFor="longitud">{t.longitude}</Label>
             <Input
-              id="longitud" name="longitud" type="number"
+              id="longitud" name="longitud" type="number" step="any"
               required value={formLongitud}
+              placeholder="Ej: -74.0721"
               onChange={(e) => setFormLongitud(e.target.value)}
             />
+            {formLongitud && parseFloat(formLongitud) > 0 && parseFloat(formLongitud) < 180 && (
+              <p className="text-xs text-amber-600 mt-1">
+                ⚠️ La longitud en Colombia es negativa. ¿Quisiste escribir -{formLongitud}?
+              </p>
+            )}
           </div>
         </div>
 

@@ -34,14 +34,7 @@ const ResultadoDetallado: React.FC<ResultadoDetalladoProps> = ({ resultado, gasE
   const formatearValoresBlockchain = (key: string, value: string): string => {
     let textoFormateado = value;
 
-    // 1. Coordenadas: solo si el valor contiene enteros grandes (>= 6 dígitos) sin punto decimal
-    if (key.toLowerCase().includes('ubicación') || key.toLowerCase().includes('location')) {
-      textoFormateado = textoFormateado.replace(/(-?\d{6,})/g, (match) => {
-        return (Number(match) / 1_000_000).toFixed(6).replace(/\.?0+$/, '');
-      });
-    }
-
-    // 2. Temperatura: solo si es un entero >= 2 dígitos pegado a °C (ej: 134°C -> 13.4°C)
+    // 1. Temperatura: solo si es un entero >= 2 dígitos pegado a °C (ej: 134°C -> 13.4°C)
     //    Si ya tiene punto decimal (ej: 13.4°C) no lo toca
     textoFormateado = textoFormateado.replace(/(-?\d{2,})(?=°C)/g, (match) => {
       if (match.includes('.')) return match;
