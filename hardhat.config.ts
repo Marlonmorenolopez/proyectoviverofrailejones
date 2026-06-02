@@ -12,6 +12,7 @@ const config: HardhatUserConfig = {
         enabled: true,
         runs: 200,
       },
+      viaIR: true, // 🚀 SOLUCIÓN: Rompe el límite de memoria de la EVM para compilar la Factory
     },
   },
   networks: {
