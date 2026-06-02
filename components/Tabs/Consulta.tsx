@@ -406,7 +406,27 @@ const Consulta: React.FC<ConsultaProps> = ({
         .map((d: Donante, i: number) => ({ ...d, posicion: i + 1 }));
       setLeaderboard(donantesArr);
 
-      setResultado(`✅ Gemelo Digital #${resumen.id} cargado. Contrato: ${dir}`);
+      // Construir resultado detallado para el panel inferior
+      const climaLinea = Number(ultimoClimaRaw.timestamp) > 0
+        ? `Temp: ${(Number(ultimoClimaRaw.temperatura) / 10).toFixed(1)}°C | ` +
+          `Humedad: ${Number(ultimoClimaRaw.humedadRelativa)}% | ` +
+          `Precipitación: ${(Number(ultimoClimaRaw.precipitacion) / 10).toFixed(1)}mm | ` +
+          `Luz: ${Number(ultimoClimaRaw.horasLuzSolar)}h`
+        : 'Sin datos climáticos aún';
+
+      setResultado(
+        `ID: ${resumen.id}\n` +
+        `Tipo: ${resumen.especie}\n` +
+        `Ubicación: (${resumen.latitud}, ${resumen.longitud})\n` +
+        `Responsable: ${resumen.responsable}\n` +
+        `Altitud: ${resumen.altitud}m\n` +
+        `Clima: ${climaLinea}\n` +
+        `Reportes: ${resumen.totalReportes}\n` +
+        `Traslados: ${resumen.totalTraslados}\n` +
+        `Donaciones: ${resumen.totalDonaciones} ETH\n` +
+        `Adoptado: ${resumen.fechaAdopcion}\n` +
+        `Contrato: ${dir}`
+      );
 
     } catch (error) {
       console.error("Error al buscar gemelo digital:", error);
@@ -772,61 +792,7 @@ const Consulta: React.FC<ConsultaProps> = ({
         </div>
       )}
 
-      {/* ═══════════════════════════════════════════════════════════════════
-          SECCIÓN 2: CONSULTAS LEGACY (ViveroBogota) — 100% intactas
-      ═══════════════════════════════════════════════════════════════════ */}
-      <div className="space-y-3 md:space-y-4">
-        <h3 className="text-base md:text-lg font-semibold">{t.seedQuery}</h3>
-        <div>
-          <Label htmlFor="semillaIdLegacy">{t.seedId}</Label>
-          <Input
-            id="semillaIdLegacy"
-            value={semillaId}
-            onChange={(e) => setSemillaId(e.target.value)}
-            type="number"
-          />
-        </div>
-        <Button onClick={obtenerSemillaLegacy} className="w-full text-sm md:text-base py-1 md:py-2">
-          <Search className="mr-2 h-4 w-4" /> {t.queryButton}
-        </Button>
-      </div>
-
-      {/* Tarjeta telemetría CRE legacy */}
-      {telemetria && (
-        <Card className="border-blue-200 bg-blue-50/40 shadow-sm transition-all duration-300">
-          <CardContent className="p-4 space-y-3">
-            <h4 className="font-bold text-blue-900 text-xs md:text-sm flex items-center">
-              <CloudRain className="mr-2 text-blue-600 h-4 w-4 animate-pulse" />
-              {t.oracleTitle}
-            </h4>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-2 text-center">
-              <div className="bg-white p-2 rounded border border-blue-100 shadow-sm">
-                <Thermometer className="mx-auto text-red-500 h-4 w-4 mb-1" />
-                <p className="text-[10px] text-gray-400 font-medium">{t.temp}</p>
-                <p className="font-bold text-sm text-gray-800">{telemetria.temperatura}°C</p>
-              </div>
-              <div className="bg-white p-2 rounded border border-blue-100 shadow-sm">
-                <Droplets className="mx-auto text-blue-500 h-4 w-4 mb-1" />
-                <p className="text-[10px] text-gray-400 font-medium">{t.humidity}</p>
-                <p className="font-bold text-sm text-gray-800">{telemetria.humedad}%</p>
-              </div>
-              <div className="bg-white p-2 rounded border border-blue-100 shadow-sm">
-                <CloudRain className="mx-auto text-indigo-500 h-4 w-4 mb-1" />
-                <p className="text-[10px] text-gray-400 font-medium">{t.rain}</p>
-                <p className="font-bold text-sm text-gray-800">{telemetria.precipitacion}mm</p>
-              </div>
-              <div className="bg-white p-2 rounded border border-blue-100 shadow-sm">
-                <Sun className="mx-auto text-yellow-500 h-4 w-4 mb-1" />
-                <p className="text-[10px] text-gray-400 font-medium">{t.solar}</p>
-                <p className="font-bold text-sm text-gray-800">{telemetria.horasLuz}h</p>
-              </div>
-            </div>
-            <p className="text-right text-[10px] text-blue-800 font-medium flex items-center justify-end">
-              <Clock className="inline h-3 w-3 mr-1" />{t.sync}: {telemetria.fecha}
-            </p>
-          </CardContent>
-        </Card>
-      )}
+      {/* Sección legacy eliminada — todas las semillas nuevas van por Factory */}
 
       <div className="space-y-3 md:space-y-4">
         <h3 className="text-base md:text-lg font-semibold">{t.growthHistory}</h3>

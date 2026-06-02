@@ -30,27 +30,27 @@ const ResultadoDetallado: React.FC<ResultadoDetalladoProps> = ({ resultado, gasE
 
   if (!resultado) return null;
 
-  // 🛠️ Función inteligente para formatear los enteros de la blockchain a decimales reales
+  // Formatea valores que vienen crudos de la blockchain (solo enteros sin decimales)
   const formatearValoresBlockchain = (key: string, value: string): string => {
     let textoFormateado = value;
 
-    // 1. Corregir Coordenadas (Divide entre 1,000,000 si la clave habla de Ubicación o Ubicación inicial)
+    // 1. Coordenadas: solo si el valor contiene enteros grandes (>= 6 dígitos) sin punto decimal
     if (key.toLowerCase().includes('ubicación') || key.toLowerCase().includes('location')) {
-      textoFormateado = textoFormateado.replace(/(-?\d+)/g, (match) => {
-        if (match.length > 4) { // Evita procesar IDs o números cortos
-          return (Number(match) / 1000000).toString();
-        }
-        return match;
+      textoFormateado = textoFormateado.replace(/(-?\d{6,})/g, (match) => {
+        return (Number(match) / 1_000_000).toFixed(6).replace(/\.?0+$/, '');
       });
     }
 
-    // 2. Corregir Temperatura (Busca números pegados a °C y los divide entre 10, ej: 134°C -> 13.4°C)
-    textoFormateado = textoFormateado.replace(/(-?\d+)(?=°C)/g, (match) => {
+    // 2. Temperatura: solo si es un entero >= 2 dígitos pegado a °C (ej: 134°C -> 13.4°C)
+    //    Si ya tiene punto decimal (ej: 13.4°C) no lo toca
+    textoFormateado = textoFormateado.replace(/(-?\d{2,})(?=°C)/g, (match) => {
+      if (match.includes('.')) return match;
       return (Number(match) / 10).toFixed(1);
     });
 
-    // 3. Corregir Precipitación (Busca números pegados a mm y los divide entre 10, ej: 4mm -> 0.4mm)
-    textoFormateado = textoFormateado.replace(/(\d+)(?=mm)/g, (match) => {
+    // 3. Precipitación: solo si es un entero >= 2 dígitos pegado a mm
+    textoFormateado = textoFormateado.replace(/(\d{2,})(?=mm)/g, (match) => {
+      if (match.includes('.')) return match;
       return (Number(match) / 10).toFixed(1);
     });
 

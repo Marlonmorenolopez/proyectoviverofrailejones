@@ -410,9 +410,21 @@ function EcoChainComponent() {
   const actualizarTotales = async () => {
     if (!contract) return;
     try {
-      const semillas = await contract.totalSemillasRegistradas();
-      const plantas  = await contract.totalPlantasRegistradas();
-      setTotalSemillas(Number(semillas));
+      const semillasLegacy = await contract.totalSemillasRegistradas();
+      const plantas        = await contract.totalPlantasRegistradas();
+
+      let semillasFactory = 0;
+      const factoryAddr = process.env.NEXT_PUBLIC_FACTORY_ADDRESS_SEPOLIA;
+      if (factoryAddr) {
+        try {
+          const factoryAbiMin = ["function totalSemillasAdoptadas() external view returns (uint256)"];
+          const factoryContract = new ethers.Contract(factoryAddr, factoryAbiMin, contract.runner);
+          const totalFactory = await factoryContract.totalSemillasAdoptadas();
+          semillasFactory = Number(totalFactory);
+        } catch { /* Factory no disponible, ignorar */ }
+      }
+
+      setTotalSemillas(Number(semillasLegacy) + semillasFactory);
       setTotalPlantas(Number(plantas));
     } catch (error) {
       console.error(t.errors.updateTotalsError, error);
@@ -640,12 +652,12 @@ function EcoChainComponent() {
                 setResultado={setResultado}
                 setGasEstimate={setGasEstimate}
                 walletConnected={walletConnected}
-                actualizarTotales={handleSeedRegisteredAutomation} // <-- Redirigido al disparador del oráculo
+                actualizarTotales={actualizarTotales}
                 language={language}
               />
             )}
             {activeTab === "consulta" && (
-              <Consulta contract={contract} setResultado={setResultado} language={language} />
+              <Consulta contract={contract} setResultado={setResultado} language={language} signer={signer} />
             )}
             {activeTab === "actualizacion" && (
               <Actualizacion contract={contract} setResultado={setResultado} setGasEstimate={setGasEstimate} language={language} />

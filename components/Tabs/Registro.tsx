@@ -365,7 +365,7 @@ const Registro: React.FC<RegistroProps> = ({
             if (data.success) {
               setResultado(prev =>
                 prev + `\n\n🌡️ ¡Clima inyectado en el Gemelo Digital!\n` +
-                `Temp: ${data.info.temp}°C | Humedad: ${data.info.hum}% | Ciudad: ${data.info.ciudad}`
+                `Temp: ${Number(data.info.temp).toFixed(1)}°C | Humedad: ${data.info.hum}% | Ciudad: ${data.info.ciudad}`
               );
             } else {
               setResultado(prev => prev + `\n\n⚠️ Oráculo automático: ${data.error}`);

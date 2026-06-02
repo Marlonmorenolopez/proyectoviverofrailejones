@@ -55,8 +55,7 @@ export async function POST(request) {
     console.log(`🤖 Oráculo automático activado | Semilla #${semillaId} | Coords: (${lat}, ${lon}) | Modo: ${modo}`);
 
     // ── Variables de entorno privadas del servidor ──
-    const apiKey          = process.env.OPENWEATHER_API_KEY?.trim();
-    const rpcUrl          = process.env.SEPOLIA_RPC_URL;
+    const apiKey = process.env.NEXT_PUBLIC_OPENWEATHER_API_KEY?.trim();    const rpcUrl          = process.env.SEPOLIA_RPC_URL;
     const privateKey      = process.env.PRIVATE_KEY;
     const receptorAddress = process.env.NEXT_PUBLIC_ORACLE_ADDRESS_SEPOLIA; // contrato CRE (legacy)
     const factoryAddress  = process.env.NEXT_PUBLIC_FACTORY_ADDRESS_SEPOLIA; // Factory activa

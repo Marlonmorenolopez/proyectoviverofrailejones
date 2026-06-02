@@ -50,3 +50,5 @@ ignition/deployments/chain-31337
 
 # Remix IDE state (no pertenece al repo)
 contracts/.states/
+
+oraculo-vivero/node_modules/
